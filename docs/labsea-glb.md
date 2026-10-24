@@ -43,9 +43,9 @@ em [`LICENSE`](../is_viewer/web/static/vendor/three/LICENSE). O GLB é carregado
 somente quando a visualização sintética é aberta. Os arquivos estão incluídos no
 pacote Python e na imagem Docker produzida a partir desta branch.
 
-O manifesto Kubernetes ainda aponta para `joabfsl/is-viewer:2.2.0`. Para usar
-esta branch no cluster, publique uma imagem com outra tag e atualize o campo
-`image` no manifesto da própria branch antes de aplicar o Deployment.
+O manifesto Kubernetes desta branch aponta para a imagem publicada
+`joabfsl/is-viewer:labsea-sintetico`, fixada pelo digest do build. A `main`
+continua com sua própria referência de imagem.
 
 ## Limites da integração
 

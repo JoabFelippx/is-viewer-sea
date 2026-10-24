@@ -26,14 +26,14 @@ O exemplo está em [`../k8s/is-viewer.yaml`](../k8s/is-viewer.yaml).
 1. Construa uma imagem com este código e publique no registry do seu ambiente:
 
    ```bash
-   docker build -t joabfsl/is-viewer:2.2.0 .
+   docker build -t joabfsl/is-viewer:labsea-sintetico .
    docker login -u joabfsl
-   docker push joabfsl/is-viewer:2.2.0
+   docker push joabfsl/is-viewer:labsea-sintetico
    ```
 
-2. O manifesto já aponta para `joabfsl/is-viewer:2.2.0`. Publique a imagem antes
-   de aplicar o YAML; esse nome de imagem só estará disponível no cluster depois
-   que o push terminar.
+2. O manifesto desta branch aponta para a imagem sintética publicada, fixada
+   pelo digest. Se reconstruir e publicar outra imagem, atualize o digest no
+   campo `image` antes de aplicar o YAML.
 
 3. Crie o Secret esperado pelo Deployment, no mesmo namespace:
 
