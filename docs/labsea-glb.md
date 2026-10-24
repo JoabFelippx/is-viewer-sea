@@ -12,13 +12,15 @@ Há links entre as duas visualizações e para a página de calibração.
 3. Arraste com o botão esquerdo para girar, com o botão central para deslocar e
    use a roda para aproximar ou afastar. **Enquadrar** ajusta a vista às camadas
    visíveis.
-4. Marque as camadas desejadas: laboratório, paredes e teto, eixos e grade,
-   câmeras 1–4, mapa, câmeras 6–8 e esqueletos.
+4. Marque as camadas desejadas: laboratório, paredes e teto, cadeiras, eixos e
+   grade, câmeras 1–4, mapa, câmeras 6–8 e esqueletos.
 
 Esconder **Paredes e teto** oculta os nós `Parede_*`, `Tile_*` e `Ceiling_*` do
 GLB para facilitar a inspeção do interior. Os rótulos das câmeras levam a
 `/calib/<id>`. O mapa e as câmeras vêm do mesmo JSON usado pelo World3D simples;
 os esqueletos vêm do tópico informado e são atualizados sem recarregar o modelo.
+Desmarcar **Cadeiras** oculta as 13 raízes `Chair_###` junto com todas as suas
+peças; marcar novamente as restaura.
 
 ## Arquivos e referencial
 

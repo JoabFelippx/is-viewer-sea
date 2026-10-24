@@ -10,6 +10,7 @@ const worldStatus = document.querySelector("#world-status");
 const options = {
   lab: document.querySelector("#show-lab"),
   walls: document.querySelector("#show-walls"),
+  chairs: document.querySelector("#show-chairs"),
   axes: document.querySelector("#show-axes"),
   cameras: document.querySelector("#show-cameras"),
   map: document.querySelector("#show-map"),
@@ -83,12 +84,14 @@ peopleGroup.add(peopleLines, peoplePoints);
 
 let labObject;
 let wallParts = [];
+let chairs = [];
 const cameraLabels = [];
 const markerGeometry = new THREE.SphereGeometry(0.09, 12, 8);
 
 function applyVisibility() {
   laboratory.visible = options.lab.checked;
   for (const part of wallParts) part.visible = options.walls.checked;
+  for (const chair of chairs) chair.visible = options.chairs.checked;
   axesGroup.visible = options.axes.checked;
   cameraGroup.visible = options.cameras.checked;
   extraCameraGroup.visible = options.extraCameras.checked;
@@ -213,6 +216,8 @@ async function loadScene() {
   labObject.rotation.x = Math.PI / 2;
   labObject.traverse((node) => {
     if (/^(Parede_|Tile_|Ceiling_)/.test(node.name)) wallParts.push(node);
+    // Cada Chair_### é a raiz das peças daquela cadeira no GLB.
+    if (/^Chair_\d{3}$/.test(node.name)) chairs.push(node);
   });
   laboratory.add(labObject);
   applyVisibility();
