@@ -16,6 +16,27 @@ CAMERA_IDS = (1, 2, 3, 4, 6, 7, 8)
 def camera_pose(path: Path, camera_id: int) -> dict:
     with np.load(path, allow_pickle=False) as calibration:
         transform = np.asarray(calibration["rt"], dtype=float)
+        rt_inverse = (
+            np.asarray(calibration["rt_inv"], dtype=float)
+            if "rt_inv" in calibration
+            else None
+        )
+        raw_intrinsics = np.asarray(calibration["K"], dtype=float)
+        undistorted_intrinsics = np.asarray(calibration["nK"], dtype=float)
+        distortion = np.asarray(calibration["dist"], dtype=float).reshape(-1)
+        roi = np.asarray(calibration["roi"], dtype=int).reshape(-1)
+        image_size = None
+        roi_size = None
+        if "width" in calibration and "height" in calibration:
+            image_size = {
+                "width": int(calibration["width"]),
+                "height": int(calibration["height"]),
+            }
+        if "w" in calibration and "h" in calibration:
+            roi_size = {
+                "width": int(calibration["w"]),
+                "height": int(calibration["h"]),
+            }
     if transform.shape not in ((3, 4), (4, 4)) or not np.isfinite(transform).all():
         raise ValueError(f"{path.name}: rt deve ser uma matriz 3x4 ou 4x4 finita")
     rotation, translation = transform[:3, :3], transform[:3, 3]
@@ -24,10 +45,24 @@ def camera_pose(path: Path, camera_id: int) -> dict:
     # rt transforma mundo em câmera: o centro no mundo é -Rᵀt.
     position = -rotation.T @ translation
     forward = rotation.T @ np.array([0.0, 0.0, 1.0])
+    if rt_inverse is None:
+        rt_inverse = np.eye(4)
+        rt_inverse[:3, :3] = rotation.T
+        rt_inverse[:3, 3] = position
     return {
         "id": camera_id,
         "position": position.tolist(),
         "forward": forward.tolist(),
+        "world_to_camera": transform.tolist(),
+        "camera_to_world": rt_inverse.tolist(),
+        "intrinsics": {
+            "raw": raw_intrinsics.tolist(),
+            "undistorted": undistorted_intrinsics.tolist(),
+            "distortion": distortion.tolist(),
+            "roi_xywh": roi.tolist(),
+            "image_size": image_size,
+            "roi_size": roi_size,
+        },
         "map_only": camera_id in (6, 7, 8),
         "source": path.name,
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),

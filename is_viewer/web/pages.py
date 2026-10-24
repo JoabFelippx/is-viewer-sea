@@ -25,6 +25,18 @@ def home_html() -> str:
     return _render("home.html")
 
 
+def calibration_html(camera_id: int | None = None) -> str:
+    selected = "" if camera_id is None else str(camera_id)
+    return _render(
+        "calibration.html",
+        selected_camera=selected,
+        overview="true" if camera_id is None else "false",
+        title="Calibração das câmeras"
+        if camera_id is None
+        else f"Calibração · câmera {camera_id}",
+    )
+
+
 def dashboard_html(topics: list[str] | None = None) -> str:
     topics = camera_topics() if topics is None else topics
     cards = "\n".join(

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>$title — IS Viewer</title>
+    <link href="/static/calibration.css" rel="stylesheet" />
+  </head>
+  <body data-camera="$selected_camera" data-overview="$overview">
+    <header class="page-header">
+      <a class="back-link" href="/">← IS Viewer</a>
+      <div>
+        <p class="eyebrow">REFERENCIAL CALIBRADO · Z PARA CIMA · METROS</p>
+        <h1>$title</h1>
+        <p class="subtitle">Posição, direção e parâmetros ópticos, derivados das calibrações originais.</p>
+      </div>
+      <label class="map-toggle">
+        <input id="include-map" type="checkbox" />
+        Incluir mapa e câmeras 6–8
+      </label>
+    </header>
+
+    <main>
+      <section class="map-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">VISTA SUPERIOR · PLANO XY</p>
+            <h2>Posição no espaço</h2>
+          </div>
+          <p id="scene-summary" class="muted">Carregando calibrações…</p>
+        </div>
+        <svg
+          id="calibration-map"
+          role="img"
+          aria-label="Planta das câmeras calibradas e do mapa"
+          viewBox="0 0 1000 520"
+        ></svg>
+        <div class="legend">
+          <span>
+            <i class="legend-dot indoor"></i>
+            Câmeras 1–4
+          </span>
+          <span>
+            <i class="legend-dot outdoor"></i>
+            Câmeras 6–8
+          </span>
+          <span>
+            <i class="legend-line"></i>
+            Direção óptica projetada no plano XY
+          </span>
+        </div>
+      </section>
+
+      <section class="data-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">EXTRÍNSECAS</p>
+            <h2>Posições e direções</h2>
+          </div>
+          <label class="camera-picker" for="camera-picker">
+            Detalhes da câmera
+            <select id="camera-picker">
+              <option value="">Visão geral</option>
+            </select>
+          </label>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Câmera</th>
+                <th scope="col">Posição X/Y/Z · m</th>
+                <th scope="col">Direção X/Y/Z</th>
+                <th scope="col">ROI · px</th>
+                <th scope="col">Matriz</th>
+              </tr>
+            </thead>
+            <tbody id="camera-table">
+              <tr><td colspan="5">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">
+          A posição é o centro óptico no mundo. A direção é o eixo frontal da
+          câmera. Selecione uma linha para inspecionar as matrizes.
+        </p>
+      </section>
+
+      <section id="selected-calibration" class="details-card" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">PARÂMETROS COMPLETOS</p>
+            <h2 id="detail-title">Calibração</h2>
+          </div>
+          <span id="source-file" class="file-chip"></span>
+        </div>
+        <div class="matrix-grid">
+          <article>
+            <h3>Mundo → câmera · rt</h3>
+            <pre id="world-to-camera"></pre>
+          </article>
+          <article>
+            <h3>Câmera → mundo · rt⁻¹</h3>
+            <pre id="camera-to-world"></pre>
+          </article>
+          <article>
+            <h3>Intrínseca original · K</h3>
+            <pre id="raw-intrinsics"></pre>
+          </article>
+          <article>
+            <h3>Intrínseca sem distorção · nK</h3>
+            <pre id="undistorted-intrinsics"></pre>
+          </article>
+          <article>
+            <h3>Distorção da lente</h3>
+            <pre id="distortion"></pre>
+          </article>
+          <article>
+            <h3>Recorte da imagem · x, y, largura, altura</h3>
+            <pre id="roi"></pre>
+          </article>
+        </div>
+        <p id="image-size" class="table-note"></p>
+      </section>
+      <p id="calibration-error" class="error" role="status"></p>
+    </main>
+    <footer>
+      <a href="/world3d/">Abrir World3D</a>
+      <span>
+        Origem e hash: confira
+        <a
+          href="https://github.com/JoabFelippx/is-viewer-sea/tree/main/data/world3d"
+        >
+          data/world3d
+        </a>
+        .
+      </span>
+    </footer>
+    <script defer src="/static/calibration.js"></script>
+  </body>
+</html>

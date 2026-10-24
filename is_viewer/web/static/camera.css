@@ -141,3 +141,13 @@ button:disabled {
   background: #155e75;
   font-weight: 700;
 }
+
+.camera-nav {
+  display: flex;
+  justify-content: space-between;
+  width: min(1280px, 100%);
+  padding: 12px 18px;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+.camera-nav a { color: inherit; }

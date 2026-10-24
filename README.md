@@ -55,6 +55,8 @@ IS_URI='amqp://usuario:senha@rabbitmq:5672/vhost' uv run server.py
 | `/` | Página inicial com exemplos |
 | `/camera/1` | Câmera individual e controles PTZ, quando disponíveis |
 | `/camera/CameraGateway.1.Frame` | A mesma página usando o tópico completo |
+| `/calib` | Visão geral das posições e direções; selecione uma câmera para abrir os parâmetros |
+| `/calib/1` | Parâmetros da câmera 1; os IDs 1–4 e 6–8 estão disponíveis |
 | `/stream/CameraGateway.1.Frame` | Stream MJPEG direto |
 | `/CameraGateway.1.Frame` | Atalho para o stream direto, sem painel PTZ |
 | `/mosaic/2x3` | Mosaico de 2 linhas e 3 colunas; informe um tópico por célula |
@@ -66,6 +68,33 @@ IS_URI='amqp://usuario:senha@rabbitmq:5672/vhost' uv run server.py
 Os tópicos são exemplos: precisam existir no seu ambiente. O mosaico aceita até
 36 células. Streams de outros serviços, como `SkeletonDetector.2.Frame`, também
 podem ser abertos em `/stream/<topic>`.
+
+## Capturas das páginas
+
+As capturas foram feitas localmente. As páginas de câmera, mosaico, mensagens e
+World3D exibem feeds ou anotações simulados, identificados na própria imagem.
+As telas de calibração usam os NPZ versionados neste projeto.
+
+<table>
+  <tr>
+    <td align="center"><a href="docs/images/pagina-inicial.png"><strong>Página inicial</strong><br><img src="docs/images/pagina-inicial.png" width="480" alt="Página inicial do IS Viewer"></a></td>
+    <td align="center"><a href="docs/images/camera-ptz.png"><strong>Câmera e PTZ</strong><br><img src="docs/images/camera-ptz.png" width="480" alt="Câmera simulada e painel PTZ"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="docs/images/mosaico.png"><strong>Mosaico</strong><br><img src="docs/images/mosaico.png" width="480" alt="Mosaico de quatro feeds simulados"></a></td>
+    <td align="center"><a href="docs/images/mensagens-json.png"><strong>Mensagens protobuf em JSON</strong><br><img src="docs/images/mensagens-json.png" width="480" alt="Mensagens simuladas formatadas como JSON"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="docs/images/world3d.png"><strong>World3D</strong><br><img src="docs/images/world3d.png" width="480" alt="World3D com anotações simuladas e câmeras"></a></td>
+    <td align="center"><a href="docs/images/calibracoes.png"><strong>Mapa e calibrações</strong><br><img src="docs/images/calibracoes.png" width="480" alt="Visão geral das câmeras e do mapa calibrado"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="docs/images/calibracao-camera-7.png"><strong>Parâmetros da câmera 7</strong><br><img src="docs/images/calibracao-camera-7.png" width="480" alt="Matrizes intrínsecas e extrínsecas da câmera 7"></a></td>
+    <td></td>
+  </tr>
+</table>
+
+O [guia World3D](docs/world3d.md) explica o referencial e as matrizes.
 
 Para todos os parâmetros, aliases e exemplos de PTZ, veja o [guia de uso](docs/uso.md).
 

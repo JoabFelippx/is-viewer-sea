@@ -43,3 +43,16 @@ reconstrua a imagem Docker se aplicável e recarregue a página.
 
 A integração do ambiente sintético ainda não foi implementada. Veja o
 [inventário dos NPZ](../data/world3d/README.md) e [análise do GLB](labsea-glb.md).
+
+## Página de calibração
+
+Abra `/calib` para comparar as posições e direções de quatro câmeras no plano
+XY. Selecione uma linha ou marcador para abrir `/calib/<id>`, com as matrizes
+intrínsecas e extrínsecas, distorção da lente, ROI e hash do NPZ. O seletor
+permite navegar pelas sete câmeras; **Incluir mapa e câmeras 6–8** enquadra o
+entorno junto com o mapa.
+
+`K` é a matriz intrínseca original; `nK` é a matriz usada com imagens sem
+distorção. `rt` transforma do mundo para a câmera e `rt⁻¹` faz o caminho inverso.
+O formato original de `rt` (4×4 nas câmeras 1–4; 3×4 nas câmeras 6–8) é
+preservado. Tabela e detalhes mostram a posição no mundo e o eixo óptico frontal.

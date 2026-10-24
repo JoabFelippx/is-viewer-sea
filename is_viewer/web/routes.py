@@ -9,7 +9,13 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..config import normalize_camera_topic
-from .pages import dashboard_html, home_html, mosaic_html, skeleton3d_html
+from .pages import (
+    calibration_html,
+    dashboard_html,
+    home_html,
+    mosaic_html,
+    skeleton3d_html,
+)
 from .streaming import topic_response
 
 router = APIRouter()
@@ -18,6 +24,19 @@ router = APIRouter()
 @router.get("/")
 async def default_view():
     return HTMLResponse(home_html())
+
+
+@router.get("/calib")
+@router.get("/calib/")
+async def calibration_overview():
+    return HTMLResponse(calibration_html())
+
+
+@router.get("/calib/{camera_id}")
+async def camera_calibration(camera_id: int):
+    if camera_id not in (1, 2, 3, 4, 6, 7, 8):
+        raise HTTPException(status_code=404, detail="calibration not found")
+    return HTMLResponse(calibration_html(camera_id))
 
 
 @router.get("/stream/{topic:path}")
