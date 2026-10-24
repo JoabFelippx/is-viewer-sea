@@ -34,6 +34,10 @@ viewer é `-Rᵀt`; todas as câmeras ficam no referencial calibrado Z-up. O map
 usado diretamente nesse mesmo referencial, sem deslocamento ou redimensionamento.
 A câmera 5 não tem calibração neste conjunto.
 
+O modelo sintético usado com esses dados foi incluído em
+[`is_viewer/web/static/models/labsea.glb`](../../is_viewer/web/static/models/labsea.glb).
+Sua origem, hash e transformação de eixos estão no [guia do GLB](../../docs/labsea-glb.md).
+
 ## Regenerar os dados para o viewer
 
 A partir da raiz do repositório, com NumPy instalado:

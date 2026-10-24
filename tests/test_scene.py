@@ -1,6 +1,7 @@
 """Importação de geometria: mundo Z-up e formatos NPZ de todas as câmeras."""
 
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -63,3 +64,18 @@ class SceneTests(unittest.TestCase):
             [i for i, row in cameras.items() if row["map_only"]], [6, 7, 8]
         )
         self.assertEqual([len(p) for p in scene["map"]["polygons"]], [146, 65, 71, 36])
+
+    def test_glb_camera_model_matches_calibrated_world_after_axis_rotation(self):
+        model = WEB_DIRECTORY / "static/models/labsea.glb"
+        with model.open("rb") as source:
+            magic, version, _ = struct.unpack("<4sII", source.read(12))
+            size, chunk_type = struct.unpack("<I4s", source.read(8))
+            gltf = json.loads(source.read(size))
+        self.assertEqual((magic, version, chunk_type), (b"glTF", 2, b"JSON"))
+        node = next(
+            node for node in gltf["nodes"] if node.get("name") == "CameraModel_001"
+        )
+        x, y, z = node["translation"]
+        scene = json.loads((WEB_DIRECTORY / "static/world3d-scene.json").read_text())
+        camera = next(item for item in scene["cameras"] if item["id"] == 1)
+        np.testing.assert_allclose([x, -z, y], camera["position"], atol=1e-5)

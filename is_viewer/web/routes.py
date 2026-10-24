@@ -16,6 +16,7 @@ from .pages import (
     home_html,
     mosaic_html,
     skeleton3d_html,
+    synthetic3d_html,
 )
 from .streaming import projection_response, topic_response
 from .vision import calibration, undistort_jpeg
@@ -104,6 +105,16 @@ async def world3d_default_view():
 @router.get("/world3d/{topic:path}")
 async def world3d_view(topic: str):
     return HTMLResponse(skeleton3d_html(topic.strip("/")))
+
+
+@router.get("/world3d-sintetico/")
+async def synthetic3d_default_view():
+    return HTMLResponse(synthetic3d_html("SkeletonDetector.3D.Annotations"))
+
+
+@router.get("/world3d-sintetico/{topic:path}")
+async def synthetic3d_view(topic: str):
+    return HTMLResponse(synthetic3d_html(topic.strip("/")))
 
 
 @router.get("/skeleton3d-data/{topic:path}")

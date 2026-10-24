@@ -7,6 +7,9 @@ qualquer nome, não uma assinatura simultânea de todos os tópicos do broker.
 As rotas antigas continuam funcionando, inclusive `/world3d/`, que preserva
 `SkeletonDetector.3D.Annotations` como tópico padrão.
 
+O botão **Abrir LabSEA sintético** abre o mesmo tópico em
+`/world3d-sintetico/<topic>`, com o [modelo GLB do laboratório](labsea-glb.md).
+
 O conteúdo esperado continua sendo protobuf `ObjectAnnotations`, com objetos e
 keypoints XYZ no referencial de calibração, em metros. Mudar o nome do tópico
 não muda o schema. `/<topic>.World3D?raw=1` entrega os dados sem a página.

@@ -1,97 +1,58 @@
-# Análise: integrar o LabSEA sintético ao IS Viewer
+# LabSEA sintético
 
-Esta integração **não foi implementada**. A análise usa o arquivo
-`labsea-simulation/saida/labsea.glb` e o script original
-`scripts/blender/exportar_glb.py` desse projeto.
+A visualização opcional está em `/world3d-sintetico/`. Ela usa o mesmo tópico
+padrão de `/world3d/`, `SkeletonDetector.3D.Annotations`. Para outro tópico de
+`ObjectAnnotations`, abra `/world3d-sintetico/Meu.Topico` ou use o campo no topo.
+Há links entre as duas visualizações e para a página de calibração.
 
-## O que existe no arquivo
+## Como usar
 
-| Item | Valor inspecionado |
-| --- | --- |
-| Formato | glTF 2.0 binário (GLB) |
-| Tamanho | 9.669.972 bytes, aproximadamente 9,7 MB |
-| Nós / malhas | 3.991 / 3.917 |
-| Triângulos | 141.864, somando os índices das primitivas |
-| Materiais | 27 |
-| Imagens | Uma textura PNG embutida, `LabSEA_Terrazzo_1m` |
-| Câmeras ópticas / animações | Não incluídas |
+1. Inicie o viewer conforme o [README](../README.md#rodar-localmente).
+2. Abra `http://localhost:3000/world3d-sintetico/`.
+3. Arraste com o botão esquerdo para girar, com o botão central para deslocar e
+   use a roda para aproximar ou afastar. **Enquadrar** ajusta a vista às camadas
+   visíveis.
+4. Marque as camadas desejadas: laboratório, paredes e teto, eixos e grade,
+   câmeras 1–4, mapa, câmeras 6–8 e esqueletos.
 
-O arquivo preserva nomes, hierarquias e propriedades `extras`. Por exemplo,
-`Chair_001` e `Chair_013` têm `dynamic=true`, `trackable=true`, tipo de objeto,
-dimensões e confiança. Isso permite identificar e mover uma cadeira completa,
-sem alterar individualmente seus componentes. As poses ópticas continuam nos NPZ.
+Esconder **Paredes e teto** oculta os nós `Parede_*`, `Tile_*` e `Ceiling_*` do
+GLB para facilitar a inspeção do interior. Os rótulos das câmeras levam a
+`/calib/<id>`. O mapa e as câmeras vêm do mesmo JSON usado pelo World3D simples;
+os esqueletos vêm do tópico informado e são atualizados sem recarregar o modelo.
 
-## Caminho recomendado
+## Arquivos e referencial
 
-Migrar o desenho do World3D de Canvas 2D para uma cena Three.js e carregar o
-arquivo com `GLTFLoader`. O loader suporta glTF 2.0 e as extensões de materiais
-presentes neste arquivo: transmissão, índice de refração e intensidade emissiva.
-[Documentação oficial do GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html).
+O arquivo está em
+[`is_viewer/web/static/models/labsea.glb`](../is_viewer/web/static/models/labsea.glb).
+Foi copiado de `labsea-simulation/saida/labsea.glb` sem alterar os bytes.
+SHA-256: `3424ba7fad0c261e64ceb3e51c5201ea63c5d84893cb5e67c67a09a142870e63`.
+São 9.669.972 bytes, 3.917 malhas, cerca de 141.864 triângulos, 27 materiais e
+uma textura PNG embutida. O GLB não inclui câmeras ópticas nem animações.
 
-Manter quatro grupos independentes na cena: ambiente sintético, mapa, câmeras
-calibradas e dados recebidos do broker. Assim é possível ligar/desligar cada
-camada e atualizar as detecções sem recarregar o laboratório. Servir o GLB pelo
-próprio viewer, com carregamento sob demanda e cache; usar arquivos JavaScript
-locais com versão fixada para não depender de CDN no laboratório.
+O exportador Blender usa Y para cima. A cena do viewer mantém os dados calibrados
+em metros com **Z para cima** e gira somente o GLB em +90° ao redor de X:
+`(x_glb, y_glb, z_glb) → (x, -z, y)`. Não há deslocamento nem normalização de
+escala. O nó `CameraModel_001` do GLB, após essa rotação, coincide com a posição
+da câmera 1 nos NPZ: aproximadamente `(2,737; 3,699; 2,868)` metros.
 
-`OrbitControls` oferece órbita, deslocamento e zoom; sua configuração de botões
-pode manter a interação atual, com botão central para deslocar.
-[Documentação oficial do OrbitControls](https://threejs.org/docs/pages/OrbitControls.html).
+O navegador carrega Three.js 0.180.0, `GLTFLoader` e `OrbitControls` de arquivos
+locais em `is_viewer/web/static/vendor/three/`. A licença MIT correspondente está
+em [`LICENSE`](../is_viewer/web/static/vendor/three/LICENSE). O GLB é carregado
+somente quando a visualização sintética é aberta. Os arquivos estão incluídos no
+pacote Python e na imagem Docker produzida a partir desta branch.
 
-## Alinhamento: o ponto mais importante
+O manifesto Kubernetes ainda aponta para `joabfsl/is-viewer:2.2.0`. Para usar
+esta branch no cluster, publique uma imagem com outra tag e atualize o campo
+`image` no manifesto da própria branch antes de aplicar o Deployment.
 
-As calibrações e o mapa usam metros com **Z para cima**. O exportador usa
-`export_yup=True`: `(X, Y, Z)` do laboratório vira `(X, Z, -Y)` no GLB.
+## Limites da integração
 
-Recomendo manter os dados do viewer em Z-up e aplicar ao grupo raiz do GLB uma
-rotação de **+90° em X**. A conversão inversa é
-`(x_glb, y_glb, z_glb) → (x_glb, -z_glb, y_glb)`. Isso mantém as mensagens e os
-NPZ no referencial original. É necessário validar piso, origem e posições das
-câmeras antes de sobrepor pessoas ou móveis. Não recentralizar automaticamente
-o GLB nem normalizar sua escala.
+A cena permite comparar posição e direção das câmeras, mapa e keypoints com a
+geometria sintética. As anotações e o vídeo real são fluxos independentes, sem
+sincronização por timestamp. As poses de câmera vêm da calibração estática e não
+acompanham PTZ. Os rótulos das câmeras não testam oclusão por paredes.
 
-Para uma visão correspondente à câmera real, reconstruir a pose usando `rt`
-e a projeção usando `K` ou `nK`, respeitando resolução e ROI. Um simples
-`lookAt` com campo de visão aproximado não reproduz a calibração. A comparação
-com imagens corrigidas deve usar `nK`; não aplicar distorção novamente.
-
-## Como aproveitar o laboratório sintético
-
-- **Contexto espacial:** mostrar pessoas/esqueletos entre mesas, paredes e portas.
-- **Localização de objetos:** associar IDs estáveis do rastreamento às raízes,
-  como `Chair_001`, e atualizar posição/orientação. Essa associação ainda precisa
-  de uma regra; os IDs de detecção não equivalem automaticamente aos IDs do GLB.
-- **Validação da reconstrução:** identificar pontos flutuando, pessoas sob o
-  piso, erros de escala ou trajetórias atravessando paredes.
-- **Visões das câmeras:** oferecer atalhos para posições calibradas e comparar
-  a vista sintética com o vídeo real, usando a projeção correta.
-- **Experimentos reproduzíveis:** reproduzir trajetórias gravadas, avaliar
-  cobertura, oclusões e regiões de interesse, e usar renders do projeto Blender
-  como dados sintéticos. O viewer apresenta os resultados; não gera sozinho
-  uma simulação física nem um conjunto de treinamento.
-
-Para ver dentro do laboratório, será útil esconder teto e certas paredes ou
-aplicar transparência. O projeto de simulação informa medidas estimadas e
-incertezas: a geometria não deve ser tratada como medição exata de todos os móveis.
-
-## Desempenho e etapas
-
-O tamanho do arquivo e a quantidade de triângulos são administráveis, mas as
-3.917 malhas podem resultar em muitas chamadas de desenho. Antes de acrescentar
-sombras e efeitos, medir tempo de carregamento, memória e FPS na máquina-alvo.
-Agrupar geometria estática por material e usar instâncias para peças repetidas,
-preservando as raízes dos objetos móveis. `InstancedMesh` reduz chamadas de
-desenho para geometria/material repetidos.
-[Documentação oficial do InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html).
-
-Sequência sugerida:
-
-1. Carregar GLB e validar eixos, escala e pontos de referência.
-2. Sobrepor mapa e as sete câmeras; acrescentar visões calibradas.
-3. Sobrepor o fluxo de esqueletos e objetos com controles de camadas.
-4. Associar objetos rastreados aos IDs do cenário e adicionar reprodução temporal.
-5. Otimizar malhas, materiais, iluminação e cache com medições reais.
-
-Para o entorno, o projeto já descreve `ifes.glb` (mundo combinado) e
-`entorno.glb` (expansão). Usar `ifes.glb` sozinho ou `labsea.glb` + `entorno.glb`;
-carregar o combinado junto com o laboratório duplicaria a geometria.
+Os objetos móveis do GLB têm nomes e propriedades, mas não são associados
+automaticamente aos IDs recebidos do broker. Essa associação exige uma regra de
+rastreamento. A quantidade de malhas pode limitar o desempenho em GPUs fracas;
+desligar as paredes reduz a obstrução visual, mas não combina as malhas.

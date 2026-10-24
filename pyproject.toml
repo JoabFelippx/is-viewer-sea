@@ -22,7 +22,18 @@ py-modules = ["server"]
 include = ["is_viewer*"]
 
 [tool.setuptools.package-data]
-"is_viewer.web" = ["templates/*.html", "static/*.css", "static/*.js", "static/*.json"]
+"is_viewer.web" = [
+  "templates/*.html",
+  "static/*.css",
+  "static/*.js",
+  "static/*.json",
+  "static/models/*.glb",
+  "static/vendor/three/*.js",
+  "static/vendor/three/LICENSE",
+  "static/vendor/three/addons/controls/*.js",
+  "static/vendor/three/addons/loaders/*.js",
+  "static/vendor/three/addons/utils/*.js",
+]
 
 [tool.ruff]
 line-length = 88

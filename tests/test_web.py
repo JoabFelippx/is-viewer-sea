@@ -38,6 +38,8 @@ class RouteTests(unittest.TestCase):
             "/mosaic/2x3",
             "/world3d/",
             "/world3d/Custom.Topic",
+            "/world3d-sintetico/",
+            "/world3d-sintetico/Custom.Topic",
         ):
             with self.subTest(path=path):
                 response = self.client.get(path)
@@ -47,6 +49,22 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("setupCamera", response.text)
         self.assertEqual(self.client.get("/static/missing.js").status_code, 404)
+
+    def test_synthetic_view_preserves_topic_without_subscribing_on_page_load(self):
+        response = self.client.get("/world3d-sintetico/Tracking.World3D")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("/skeleton3d-data/Tracking.World3D", response.text)
+        self.assertIn(
+            "/static/models/labsea.glb",
+            self.client.get("/static/world3d-synthetic.js").text,
+        )
+        self.assertEqual(
+            self.client.get("/static/models/labsea.glb").content[:4], b"glTF"
+        )
+        self.assertEqual(
+            self.client.get("/static/vendor/three/three.core.js").status_code, 200
+        )
+        self.hub.add_client.assert_not_called()
 
     def test_invalid_camera_and_mosaic(self):
         for path in (
