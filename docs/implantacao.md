@@ -26,14 +26,14 @@ O exemplo está em [`../k8s/is-viewer.yaml`](../k8s/is-viewer.yaml).
 1. Construa uma imagem com este código e publique no registry do seu ambiente:
 
    ```bash
-   docker build -t SEU_REGISTRY/is-viewer:SUA_TAG .
-   docker push SEU_REGISTRY/is-viewer:SUA_TAG
+   docker build -t joabfsl/is-viewer:2.2.0 .
+   docker login -u joabfsl
+   docker push joabfsl/is-viewer:2.2.0
    ```
 
-2. Atualize `spec.template.spec.containers[0].image` no manifesto. A imagem
-   atualmente indicada no arquivo é uma versão publicada anteriormente, fixada
-   por digest; ela não contém automaticamente suas alterações locais. Substitua
-   a referência completa, incluindo o digest antigo.
+2. O manifesto já aponta para `joabfsl/is-viewer:2.2.0`. Publique a imagem antes
+   de aplicar o YAML; esse nome de imagem só estará disponível no cluster depois
+   que o push terminar.
 
 3. Crie o Secret esperado pelo Deployment, no mesmo namespace:
 

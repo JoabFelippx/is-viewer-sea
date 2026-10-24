@@ -42,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: viewer
-          image: miguelgrigorio27/is-viewer:2.1.4@sha256:fde5c6236ee322bf5c6082a8e2c6da3b20efb1bd64a09b602dfddc1610fdcbde
+          image: joabfsl/is-viewer:2.2.0
           imagePullPolicy: IfNotPresent
           command: ["uvicorn"]
           args: ["server:app", "--host", "0.0.0.0", "--port", "3000"]
