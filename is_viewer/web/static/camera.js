@@ -6,6 +6,7 @@ function setupCamera(card) {
   const api = `/api/cameras/${cameraId}`;
   const status = card.querySelector(".status");
   const controls = card.querySelector(".ptz");
+  const toolbar = card.querySelector(".camera-toolbar");
   const toggle = card.querySelector(".ptz-toggle");
   const home = card.querySelector(".ptz-home");
   const stepButtons = [...controls.querySelectorAll("[data-pan], [data-zoom]")];
@@ -20,6 +21,7 @@ function setupCamera(card) {
   let polling = false;
   let timer;
   const controller = new AbortController();
+  setupCameraVision(card, cameraId);
 
   try {
     const saved = JSON.parse(localStorage.getItem(settingsKey) || "{}");
@@ -80,6 +82,7 @@ function setupCamera(card) {
     .then((value) => {
       capabilities = value;
       toggle.hidden = !(value.state === "available" && value.ptz);
+      if (!toggle.hidden) toolbar.hidden = false;
       updateButtons();
     })
     .catch(() => {

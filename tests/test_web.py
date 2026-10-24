@@ -57,6 +57,16 @@ class RouteTests(unittest.TestCase):
         ):
             self.assertEqual(self.client.get(path).status_code, 400)
 
+    def test_undistortion_requires_a_calibrated_camera(self):
+        self.assertEqual(
+            self.client.get("/stream/SkeletonDetector.2.Frame?undistort=1").status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.get("/stream/CameraGateway.5.Frame?undistort=1").status_code,
+            404,
+        )
+
     def test_history_validation_happens_before_subscription(self):
         for history in ("0", "101", "abc"):
             response = self.client.get("/Struct/Some.Topic?history=" + history)

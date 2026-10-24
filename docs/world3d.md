@@ -56,3 +56,8 @@ entorno junto com o mapa.
 distorção. `rt` transforma do mundo para a câmera e `rt⁻¹` faz o caminho inverso.
 O formato original de `rt` (4×4 nas câmeras 1–4; 3×4 nas câmeras 6–8) é
 preservado. Tabela e detalhes mostram a posição no mundo e o eixo óptico frontal.
+
+Na página `/camera/<id>`, **Sobrepor 3D** usa essas mesmas extrínsecas para
+projetar os keypoints do tópico de anotações sobre a imagem. A opção **Sem
+distorção** corrige o JPEG e troca a projeção de `K` para `nK`. Veja o
+[guia de uso](uso.md#correção-da-lente-e-anotações-3d-na-imagem).

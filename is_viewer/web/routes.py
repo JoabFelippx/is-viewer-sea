@@ -4,11 +4,12 @@ As rotas genéricas ficam por último para não capturar /api, /stream e /world3
 """
 
 import re
+from functools import partial
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..config import normalize_camera_topic
+from ..config import CAMERA_TOPIC, normalize_camera_topic
 from .pages import (
     calibration_html,
     dashboard_html,
@@ -16,7 +17,8 @@ from .pages import (
     mosaic_html,
     skeleton3d_html,
 )
-from .streaming import topic_response
+from .streaming import projection_response, topic_response
+from .vision import calibration, undistort_jpeg
 
 router = APIRouter()
 
@@ -47,7 +49,26 @@ async def camera_stream(request: Request, topic: str):
     topic = topic.strip("/").strip()
     if not topic or "/" in topic or len(topic) > 255:
         raise HTTPException(status_code=400, detail="invalid image topic")
-    return await topic_response(request, topic, "Image")
+    image_transform = None
+    if request.query_params.get("undistort") == "1":
+        match = CAMERA_TOPIC.fullmatch(topic)
+        if match is None:
+            raise HTTPException(
+                status_code=400, detail="undistortion needs a camera topic"
+            )
+        camera_id = int(match.group(1))
+        calibration(camera_id)
+        image_transform = partial(undistort_jpeg, camera_id=camera_id)
+    return await topic_response(request, topic, "Image", image_transform)
+
+
+@router.get("/projection/{camera_id}/{topic:path}")
+async def camera_projection(request: Request, camera_id: int, topic: str):
+    topic = topic.strip("/").strip()
+    if not topic or "/" in topic or len(topic) > 255 or any(c in topic for c in "*#"):
+        raise HTTPException(status_code=400, detail="invalid 3D topic")
+    calibration(camera_id)
+    return await projection_response(request, camera_id, topic)
 
 
 @router.get("/camera/{topic:path}")

@@ -25,6 +25,31 @@ Para usar apenas o vídeo, sem a interface:
 `/1` não é um atalho de câmera. Use `/camera/1` para a página ou o tópico completo
 para o stream.
 
+## Correção da lente e anotações 3D na imagem
+
+Em `/camera/1`, **Sem distorção** troca o MJPEG pelo stream corrigido com `K`,
+`nK` e os coeficientes `dist` da calibração. **Imagem original** volta ao stream
+sem correção. O resultado é recortado para o ROI armazenado no NPZ. Para obter
+só o vídeo corrigido:
+
+```text
+/stream/CameraGateway.1.Frame?undistort=1
+```
+
+**Sobrepor 3D** projeta na imagem os mesmos keypoints e conexões usados pelo
+World3D. O campo **Tópico 3D** começa em `SkeletonDetector.3D.Annotations` e
+aceita outro tópico concreto de `ObjectAnnotations`, inclusive nomes terminados
+em `.World3D`. Ao alternar a correção da lente, os pontos passam a usar a matriz
+intrínseca correspondente, sem perder o fluxo de anotações. Na imagem corrigida,
+as coordenadas projetadas são deslocadas pela origem do ROI para permanecerem
+alinhadas com o recorte.
+
+Os controles aparecem para as câmeras com calibração incluída (1–4 e 6–8).
+As matrizes foram importadas dos NPZ em `data/world3d/calibrations/`; o servidor
+lê o JSON numérico gerado por `scripts/import_world3d.py`. A projeção usa a pose
+registrada na calibração e pode deixar de alinhar após movimentar o PTZ. Imagem
+e anotações são streams independentes, sem sincronização por timestamp.
+
 ## Configurar frequência e cor
 
 Os parâmetros são aplicados quando se abre o stream de um tópico CameraGateway:

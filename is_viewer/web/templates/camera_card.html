@@ -1,13 +1,18 @@
 <article class="camera" data-topic="$topic">
-  <img loading="lazy" src="/stream/$topic" alt="" />
-  <button
-    class="ptz-toggle"
-    type="button"
-    hidden
-    aria-label="Abrir controles PTZ"
-  >
-    PTZ
-  </button>
+  <div class="camera-frame">
+    <img loading="lazy" src="/stream/$topic" alt="" />
+    <canvas class="camera-overlay" hidden aria-label="Anotações 3D projetadas na imagem"></canvas>
+  </div>
+  <div class="camera-toolbar" hidden>
+    <button class="undistort-toggle" type="button" hidden>Sem distorção</button>
+    <button class="overlay-toggle" type="button" hidden>Sobrepor 3D</button>
+    <label class="annotation-topic" hidden>
+      Tópico 3D
+      <input value="SkeletonDetector.3D.Annotations" aria-label="Tópico das anotações 3D" />
+    </label>
+    <button class="ptz-toggle" type="button" hidden aria-label="Abrir controles PTZ">PTZ</button>
+  </div>
+  <small class="calibration-note" hidden aria-live="polite"></small>
   <div class="ptz" hidden>
     <div class="pad">
       <button data-pan="0" data-tilt="1">▲</button>

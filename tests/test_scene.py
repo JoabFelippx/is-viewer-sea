@@ -21,7 +21,14 @@ class SceneTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "camera.npz"
             for shape in (transform, transform[:3]):
-                np.savez(path, rt=shape)
+                np.savez(
+                    path,
+                    rt=shape,
+                    K=np.eye(3),
+                    nK=np.eye(3),
+                    dist=np.zeros((1, 5)),
+                    roi=np.array([0, 0, 1280, 720]),
+                )
                 camera = camera_pose(path, 6)
                 np.testing.assert_allclose(camera["position"], center)
                 np.testing.assert_allclose(camera["forward"], rotation.T @ [0, 0, 1])
