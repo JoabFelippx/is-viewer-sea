@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+.git
+.venv
+env
+__pycache__
+*.pyc
+*.egg-info
+.env
+build
+dist

@@ -1,0 +1,70 @@
+<article class="camera" data-topic="$topic">
+  <img loading="lazy" src="/stream/$topic" alt="" />
+  <button
+    class="ptz-toggle"
+    type="button"
+    hidden
+    aria-label="Abrir controles PTZ"
+  >
+    PTZ
+  </button>
+  <div class="ptz" hidden>
+    <div class="pad">
+      <button data-pan="0" data-tilt="1">▲</button>
+      <button data-pan="-1" data-tilt="0">◀</button>
+      <button data-pan="1" data-tilt="0">▶</button>
+      <button data-pan="0" data-tilt="-1">▼</button>
+    </div>
+    <div class="zoom">
+      <button
+        class="ptz-home"
+        type="button"
+        disabled
+        title="Ir para a posição absoluta (0, 0, 0)"
+      >
+        HOME
+      </button>
+      <button data-zoom="1">Zoom +</button>
+      <button data-zoom="-1">Zoom −</button>
+    </div>
+    <div class="settings">
+      <label>
+        Passo
+        <input
+          class="step-degrees"
+          type="number"
+          min="0.5"
+          max="45"
+          step="0.5"
+          value="5"
+        />
+      </label>
+      <label>
+        <input class="invert-pan" type="checkbox" />
+        Inverter pan
+      </label>
+      <label>
+        <input class="invert-tilt" type="checkbox" />
+        Inverter tilt
+      </label>
+    </div>
+    <div class="ptz-position" aria-live="polite">
+      <strong>Posição PTZ</strong>
+      <span>
+        Pan:
+        <output data-position="pan">—</output>
+      </span>
+      <span>
+        Tilt:
+        <output data-position="tilt">—</output>
+      </span>
+      <span>
+        Zoom:
+        <output data-position="zoom">—</output>
+      </span>
+      <small>Unidades nativas da câmera</small>
+      <small class="position-status">Aguardando leitura</small>
+    </div>
+  </div>
+  <output class="status" hidden></output>
+</article>

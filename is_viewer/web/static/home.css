@@ -1,0 +1,40 @@
+:root {
+  color-scheme: dark;
+  font: 16px system-ui;
+  background: #0b0d10;
+  color: #edf2f7;
+}
+body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px;
+  line-height: 1.45;
+}
+h1 {
+  margin-top: 0;
+}
+section {
+  background: #151a21;
+  border: 1px solid #29313d;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 14px 0;
+}
+code {
+  color: #b9f6ca;
+  background: #0f141b;
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+a {
+  color: #8ecbff;
+}
+li {
+  margin: 8px 0;
+}
+.example {
+  display: block;
+  margin: 8px 0;
+  padding: 9px;
+  overflow: auto;
+}

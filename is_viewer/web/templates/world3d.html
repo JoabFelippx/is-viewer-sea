@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>World 3D — IS Viewer</title>
+    <link href="/static/world3d.css" rel="stylesheet" />
+  </head>
+  <body>
+    <header>
+      <form id="topic-form">
+        <label for="world-topic">World 3D</label>
+        <input
+          id="world-topic"
+          value="$topic"
+          placeholder="MeuServico.World3D"
+          required
+        />
+        <button type="submit">Abrir tópico</button>
+      </form>
+      <div class="view-options">
+        <label class="axis-x">
+          <input checked data-axis="x" type="checkbox" />
+          X
+        </label>
+        <label class="axis-y">
+          <input checked data-axis="y" type="checkbox" />
+          Y
+        </label>
+        <label class="axis-z">
+          <input checked data-axis="z" type="checkbox" />
+          Z
+        </label>
+        <label>
+          <input id="show-map" type="checkbox" />
+          Mapa + câmeras 6–8
+        </label>
+        <button id="fit-scene" type="button">Enquadrar</button>
+      </div>
+      <p>Esquerdo: girar · Botão central pressionado: deslocar · Roda: zoom</p>
+      <output id="world-status" aria-live="polite">
+        Aguardando anotações…
+      </output>
+      <output id="scene-status" aria-live="polite"></output>
+    </header>
+    <canvas data-source="$source"></canvas>
+    <script defer src="/static/world3d-scene.js"></script>
+    <script defer src="/static/world3d.js"></script>
+  </body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <title>IS Viewer</title>
+    <link href="/static/home.css" rel="stylesheet" />
+  </head>
+  <body>
+    <h1>IS Viewer</h1>
+    <p>Visualizador simples de imagens e mensagens dos tópicos IS.</p>
+    <section>
+      <h2>Funcionalidades</h2>
+      <ul>
+        <li>
+          <a href="/">Página inicial</a>
+          : esta documentação.
+        </li>
+        <li>
+          <a href="/mosaic/2x2">Mosaico 2×2</a>
+          : abra também
+          <code>/mosaic/2x3</code>
+          ,
+          <code>/mosaic/3x4</code>
+          ou qualquer layout de até 36 células. Digite o tópico em cada quadrado
+          e clique em
+          <code>Abrir</code>
+          .
+        </li>
+        <li>
+          <code>/camera/1</code>
+          : visualiza uma câmera individual com controles PTZ quando
+          disponíveis.
+        </li>
+        <li>
+          <code>/stream/CameraGateway.1.Frame</code>
+          : stream MJPEG direto, útil para o mosaico e outras ferramentas.
+        </li>
+        <li>
+          <a href="/world3d/">World 3D</a>
+          : mostra a reconstrução em tempo real; arraste para girar e use o
+          scroll para aproximar/afastar.
+        </li>
+        <li>
+          <code>/&lt;schema&gt;/&lt;topic&gt;</code>
+          : visualiza uma mensagem protobuf convertida para JSON.
+        </li>
+        <li>
+          <code>/topic/&lt;schema&gt;/&lt;topic&gt;</code>
+          : mesma visualização, em formato explícito.
+        </li>
+      </ul>
+    </section>
+    <section>
+      <h2>Exemplos</h2>
+      <code class="example">
+        /ObjectAnnotations/SkeletonDetector.2.Detection
+      </code>
+      <code class="example">/Struct/Some.Struct.Topic</code>
+      <code class="example">/CameraGateway.1.Frame</code>
+    </section>
+    <section>
+      <h2>Parâmetros</h2>
+      <ul>
+        <li>
+          <code>?raw=1</code>
+          : entrega as mensagens diretamente, sem a página JSON.
+        </li>
+        <li>
+          <code>?history=10</code>
+          : mantém até 10 mensagens recentes na página (de 1 a 100).
+        </li>
+        <li>
+          <code>?fps=10</code>
+          : solicita essa frequência à câmera.
+        </li>
+        <li>
+          <code>?color=gray</code>
+          : solicita o espaço de cor; por exemplo
+          <code>gray</code>
+          ou
+          <code>rgb</code>
+          .
+        </li>
+      </ul>
+      <code class="example">/CameraGateway.1.Frame?fps=10&amp;color=gray</code>
+    </section>
+    <section>
+      <h2>API da câmera</h2>
+      <ul>
+        <li>
+          <code>/api/cameras/&lt;id&gt;/capabilities</code>
+          : consulta capacidades.
+        </li>
+        <li>
+          <code>/api/cameras/&lt;id&gt;/ptz</code>
+          : movimentação PTZ via POST.
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>
