@@ -59,8 +59,8 @@ O exemplo está em [`../k8s/is-viewer.yaml`](../k8s/is-viewer.yaml).
    kubectl port-forward service/is-viewer 3000:3000
    ```
 
-   Abra `http://localhost:3000/`. O Service também define **NodePort 30301**:
-   quando a rede permite, use `http://IP_DO_NODE:30301/`.
+   Abra `http://localhost:3000/`. O Service também define **NodePort 30300**:
+   quando a rede permite, use `http://IP_DO_NODE:30300/`.
 
 Use `-n SEU_NAMESPACE` nos comandos se estiver fora do namespace padrão. O
 manifesto usa uma réplica e probes TCP. Elas verificam a porta HTTP, sem garantir
