@@ -24,27 +24,22 @@ O mapa é desenhado no referencial original, sem deslocamento ou mudança de esc
 
 ## Dados incluídos e atualização
 
-`is_viewer/web/static/world3d-scene.json` inclui as calibrações 1–4 e 6–8 e o
-mapa `map_B3A1.npz` fornecido. O JSON registra nomes e hashes dos arquivos de
-origem e acompanha o pacote/Docker. O servidor não precisa acessar Downloads
-ou o projeto de simulação em tempo de execução.
+`data/world3d/` guarda os NPZ originais das calibrações 1–4 e 6–8 e o mapa
+`map_B3A1.npz`, com um inventário e hashes em seu README. O JSON registra os
+mesmos hashes e acompanha o pacote/Docker. O servidor não precisa acessar
+Downloads ou o projeto de simulação em tempo de execução.
 
 Para atualizar os dados a partir dos originais:
 
 ```bash
 uv pip install numpy
-export CALIBRATIONS=/caminho/para/labsea-simulation/dados/calibracao
-export MAP_FILE=/caminho/para/map_B3A1.npz
-python scripts/import_world3d.py \
-  --calibrations "$CALIBRATIONS" \
-  --map "$MAP_FILE" \
-  --trust-map-pickle
+python scripts/import_world3d.py --trust-map-pickle
 ```
 
-O mapa legado guarda listas de objetos pickle. A opção acima deve ser usada
-somente para um arquivo local conhecido. Não há upload ou execução de pickle
-pelo servidor; o navegador recebe apenas JSON numérico. Após atualizar,
+O mapa legado guarda listas de objetos pickle. Use a opção somente com o mapa
+versionado em `data/world3d/map_B3A1.npz`. O servidor não recebe nem executa
+pickle; o navegador recebe apenas JSON numérico. Após atualizar,
 reconstrua a imagem Docker se aplicável e recarregue a página.
 
-A integração do ambiente sintético ainda não foi implementada. Veja a
-[análise do GLB](labsea-glb.md).
+A integração do ambiente sintético ainda não foi implementada. Veja o
+[inventário dos NPZ](../data/world3d/README.md) e [análise do GLB](labsea-glb.md).

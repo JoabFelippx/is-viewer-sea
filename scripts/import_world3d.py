@@ -52,8 +52,11 @@ def map_polygons(path: Path, trust_pickle: bool = False) -> list:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--calibrations", type=Path, required=True)
-    parser.add_argument("--map", type=Path, required=True)
+    data_directory = Path(__file__).resolve().parents[1] / "data/world3d"
+    parser.add_argument(
+        "--calibrations", type=Path, default=data_directory / "calibrations"
+    )
+    parser.add_argument("--map", type=Path, default=data_directory / "map_B3A1.npz")
     parser.add_argument("--trust-map-pickle", action="store_true")
     parser.add_argument(
         "--output",
