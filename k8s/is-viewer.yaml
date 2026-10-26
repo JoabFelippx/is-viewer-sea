@@ -50,7 +50,7 @@ spec:
             - name: IS_URI
               valueFrom:
                 secretKeyRef:
-                  name: rabbitmq-new-uri
+                  name: rabbitmq-uri
                   key: uri
             - name: IS_PORT
               value: "3000"
