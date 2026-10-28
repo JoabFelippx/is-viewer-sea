@@ -6,10 +6,71 @@ import unittest
 import cv2
 import numpy as np
 
-from is_viewer.web.vision import calibration, project_annotations, undistort_jpeg
+from is_viewer.web.vision import (
+    calibration,
+    project_annotations,
+    transform_annotations_2d,
+    undistort_jpeg,
+)
 
 
 class VisionTests(unittest.TestCase):
+    def test_2d_points_and_bounding_polygon_in_both_pixel_spaces(self):
+        width, height = 1280, 720
+        sample = {
+            "publisher": "detector-1",
+            "message": {
+                "resolution": {"width": width, "height": height},
+                "objects": [
+                    {
+                        "id": 8,
+                        "label": "person",
+                        "keypoints": [{"id": 7, "position": {"x": 640, "y": 360}}],
+                        "region": {
+                            "vertices": [
+                                {"x": 600, "y": 300},
+                                {"x": 680, "y": 300},
+                                {"x": 680, "y": 420},
+                                {"x": 600, "y": 420},
+                            ]
+                        },
+                    }
+                ],
+            },
+        }
+        result = json.loads(transform_annotations_2d(json.dumps(sample).encode(), 1))
+        self.assertEqual(result["publisher"], "detector-1")
+        item = result["objects"][0]
+        self.assertEqual(item["label"], "person")
+        self.assertEqual(len(item["region"]), 4)
+        self.assertEqual(item["keypoints"][0]["raw"], [640, 360])
+        self.assertTrue(np.isfinite(item["keypoints"][0]["corrected"]).all())
+        normalized = {
+            **sample,
+            "message": {
+                **sample["message"],
+                "objects": [
+                    {
+                        **sample["message"]["objects"][0],
+                        "keypoints": [{"id": 7, "position": {"x": 0.5, "y": 0.5}}],
+                    }
+                ],
+            },
+        }
+        normalized_result = json.loads(
+            transform_annotations_2d(json.dumps(normalized).encode(), 1, "normalized")
+        )
+        self.assertEqual(
+            normalized_result["objects"][0]["keypoints"][0]["raw"], [640, 360]
+        )
+        uncalibrated = json.loads(
+            transform_annotations_2d(json.dumps(sample).encode(), 5)
+        )
+        self.assertEqual(uncalibrated["objects"][0]["keypoints"][0]["raw"], [640, 360])
+        self.assertEqual(
+            uncalibrated["objects"][0]["keypoints"][0]["corrected"], [640, 360]
+        )
+
     def test_project_optical_axis_into_both_image_spaces(self):
         for camera_id in (1, 7):
             with self.subTest(camera_id=camera_id):

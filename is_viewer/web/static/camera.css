@@ -61,14 +61,18 @@ main {
   background: #155e75;
   border-color: #38bdf8;
 }
-.annotation-topic {
+.annotation-topic,
+.annotation-2d-topic,
+.annotation-2d-coordinates {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: #b6c3d3;
 }
-.annotation-topic input {
+.annotation-topic input,
+.annotation-2d-topic input,
+.annotation-2d-coordinates select {
   width: min(270px, 40vw);
   min-height: 32px;
   padding: 0 8px;

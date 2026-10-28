@@ -7,6 +7,7 @@ const view = document.querySelector("#scene-view");
 const labels = document.querySelector("#camera-labels");
 const modelStatus = document.querySelector("#model-status");
 const worldStatus = document.querySelector("#world-status");
+const annotations = new window.AnnotationState();
 const options = {
   lab: document.querySelector("#show-lab"),
   walls: document.querySelector("#show-walls"),
@@ -232,12 +233,9 @@ function replacePositions(object, positions) {
   object.geometry = geometry;
 }
 
-function updatePeople(line) {
-  const data = JSON.parse(line);
-  const message = data.message || data;
+function renderPeople(objects) {
   const points = [];
   const lines = [];
-  const objects = message.objects || [];
   for (const person of objects) {
     const keypoints = new Map();
     for (const item of person.keypoints || []) {
@@ -255,8 +253,22 @@ function updatePeople(line) {
   }
   replacePositions(peoplePoints, points);
   replacePositions(peopleLines, lines);
+}
+
+function updatePeople(line) {
+  const objects = annotations.update(JSON.parse(line));
+  renderPeople(objects);
   worldStatus.textContent = `${objects.length} objeto(s) · leitura às ${new Date().toLocaleTimeString("pt-BR")}`;
 }
+
+setInterval(() => {
+  const before = annotations.sources.size;
+  const active = annotations.objects();
+  if (annotations.sources.size !== before) {
+    renderPeople(active);
+    worldStatus.textContent = `${active.length} objeto(s) · fontes inativas removidas`;
+  }
+}, 250);
 
 async function readAnnotations() {
   const response = await fetch(view.dataset.source);

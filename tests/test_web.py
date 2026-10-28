@@ -13,7 +13,7 @@ from starlette.requests import Request
 from is_viewer.app import create_app
 from is_viewer.cameras import CameraService, PositionUnavailable, PtzStep
 from is_viewer.config import Settings
-from is_viewer.web.streaming import topic_response
+from is_viewer.web.streaming import projection_response, topic_response
 
 
 class RouteTests(unittest.TestCase):
@@ -306,6 +306,39 @@ class StreamTests(unittest.IsolatedAsyncioTestCase):
         response, hub = await self.response("Struct", ("json", b'{"ok":true}'))
         body = b"".join([part async for part in response.body_iterator])
         self.assertEqual(body, b'{"ok":true}\n')
+        hub.remove_client.assert_called_once_with("token")
+
+    async def test_annotations_keep_burst_capacity_for_multiple_publishers(self):
+        response, hub = await self.response(
+            "ObjectAnnotations", ("json", b'{"objects":[]}')
+        )
+        self.assertEqual(hub.add_client.call_args.args[2:], ("ObjectAnnotations", 100))
+        body = b"".join([part async for part in response.body_iterator])
+        self.assertEqual(body, b'{"objects":[]}\n')
+
+    async def test_2d_projection_works_without_camera_calibration(self):
+        queue = asyncio.Queue()
+        queue.put_nowait(
+            (
+                "json",
+                b'{"message":{"objects":[{"id":1,"keypoints":[{"id":7,"position":{"x":640,"y":360}}]}]}}',
+            )
+        )
+        hub = Mock()
+        hub.add_client.return_value = ("token", queue)
+        app = SimpleNamespace(state=SimpleNamespace(hub=hub))
+        request = Request(
+            {"type": "http", "app": app, "query_string": b"", "headers": []}
+        )
+        request.is_disconnected = AsyncMock(side_effect=[False, True])
+        with patch(
+            "is_viewer.web.streaming.asyncio.to_thread",
+            new=AsyncMock(side_effect=lambda func, *args: func(*args)),
+        ):
+            response = await projection_response(request, 5, "Detector.5.Detection", 2)
+            body = b"".join([part async for part in response.body_iterator])
+        self.assertIn(b'"raw":[640.0,360.0]', body)
+        self.assertEqual(hub.add_client.call_args.args[2:], ("ObjectAnnotations", 100))
         hub.remove_client.assert_called_once_with("token")
 
     async def test_cancelled_stream_removes_client(self):

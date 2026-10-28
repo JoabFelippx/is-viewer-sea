@@ -14,6 +14,23 @@ O conteúdo esperado continua sendo protobuf `ObjectAnnotations`, com objetos e
 keypoints XYZ no referencial de calibração, em metros. Mudar o nome do tópico
 não muda o schema. `/<topic>.World3D?raw=1` entrega os dados sem a página.
 
+## Múltiplos publicadores no mesmo tópico
+
+`/world3d/` e `/world3d-sintetico/` acumulam as anotações recentes de cada
+publicador. Sem um identificador de origem, associam mensagens pelo `label` e
+proximidade dos pontos. O novo quadro substitui os objetos anteriores da origem
+inferida; objetos ausentes deixam de ser desenhados. Cada origem desaparece três
+segundos após sua última atualização. Para identificar a origem com certeza, o
+publicador pode preencher `Message.metadata["source"]` com um nome estável.
+Também são aceitas as chaves `publisher`, `service`, `producer` e `is-source`.
+
+O fluxo de visualização ignora mensagens vazias sem origem, porque elas não dizem
+qual publicador terminou. Ele também reduz mensagens idênticas a uma por segundo;
+posições diferentes passam imediatamente. Isso evita redesenhos causados por
+publicações repetidas. A rota `/ObjectAnnotations/<topic>` não aplica esse filtro
+de visualização. Mesmo com a origem declarada, os desenhos expiram se a publicação
+parar.
+
 - Arrastar com botão esquerdo: girar ao redor do ponto de interesse.
 - Arrastar com a roda/botão central pressionado: deslocar o ponto de vista.
 - Girar a roda: aproximar/afastar.

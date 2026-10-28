@@ -59,6 +59,7 @@ IS_URI='amqp://usuario:senha@rabbitmq:5672/vhost' uv run server.py
 | `/calib/1` | Parâmetros da câmera 1; os IDs 1–4 e 6–8 estão disponíveis |
 | `/stream/CameraGateway.1.Frame` | Stream MJPEG direto |
 | `/stream/CameraGateway.1.Frame?undistort=1` | MJPEG corrigido pela calibração da câmera 1 |
+| `/projection2d/1/SkeletonDetector.1.Detection` | Anotações 2D em pixels originais e corrigidos, em JSON por linha |
 | `/CameraGateway.1.Frame` | Atalho para o stream direto, sem painel PTZ |
 | `/mosaic/2x3` | Mosaico de 2 linhas e 3 colunas; informe um tópico por célula |
 | `/Struct/Some.Struct.Topic` | Página com mensagens protobuf convertidas em JSON |
@@ -192,8 +193,17 @@ O painel PTZ tem **HOME (0, 0, 0)** e leitura da posição atual. O World3D acei
 URLs como `/MeuServico.World3D`, navegação pelo botão central, marcadores das
 câmeras 1–4 e a opção de mapa com câmeras 6–8.
 
+As páginas World3D reúnem objetos publicados por vários serviços no mesmo tópico.
+Cada mensagem substitui o quadro anterior da origem associada, para que mudanças
+de ID ou objetos ausentes não deixem rastros.
+Para evitar oscilações e lentidão em fluxos intensos, suas visualizações ignoram
+mensagens vazias sem origem identificada e repetições idênticas. A rota genérica
+`/ObjectAnnotations/<topic>` não aplica esse filtro. Veja o
+[comportamento de múltiplos publicadores](docs/world3d.md#múltiplos-publicadores-no-mesmo-tópico).
+
 - [Uso de HOME e posição PTZ](docs/uso.md#home-e-posição-ptz)
 - [Correção da lente e anotações 3D na imagem](docs/uso.md#correção-da-lente-e-anotações-3d-na-imagem)
+- [Sobreposição de pontos e bounding boxes 2D](docs/uso.md#sobreposição-de-anotações-2d)
 - [World3D e atualização do mapa/calibrações](docs/world3d.md)
 - [LabSEA sintético: uso, arquivos e referencial](docs/labsea-glb.md)
 

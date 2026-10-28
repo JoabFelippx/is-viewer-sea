@@ -50,6 +50,45 @@ lê o JSON numérico gerado por `scripts/import_world3d.py`. A projeção usa a 
 registrada na calibração e pode deixar de alinhar após movimentar o PTZ. Imagem
 e anotações são streams independentes, sem sincronização por timestamp.
 
+Os desenhos 3D são removidos após 3 segundos sem atualização da origem, mesmo
+se a conexão HTTP continuar aberta. Se vários serviços publicam no mesmo tópico,
+o viewer mantém o último conjunto de objetos de cada origem. Para distinguir
+objetos com o mesmo ID e rótulo com certeza, cada publicador pode enviar um
+identificador estável em `Message.metadata["source"]` (também são aceitos
+`publisher`, `service`, `producer` e `is-source`). Os publicadores atuais não
+enviam esse campo. Nesse caso, o viewer associa mensagens recentes pelo rótulo
+e proximidade espacial dos pontos ou da caixa. Cada mensagem substitui o quadro
+anterior da origem inferida, removendo imediatamente objetos que sumiram desse
+quadro. IDs que mudam entre quadros não deixam pontos antigos desenhados. Para
+objetos sem posição, o ID é usado como apoio. Observações sobrepostas de serviços
+diferentes não podem ser atribuídas com segurança.
+Mensagens 3D vazias sem origem identificada são ignoradas, e publicações idênticas
+são reduzidas a uma por segundo nas visualizações. As posições novas continuam
+passando imediatamente. Use `/ObjectAnnotations/<topic>` para inspecionar o fluxo
+sem esse filtro.
+
+## Sobreposição de anotações 2D
+
+Em `/camera/1`, **Sobrepor 2D** lê por padrão
+`SkeletonDetector.1.Detection`. O campo **Tópico 2D** aceita qualquer tópico
+concreto que publique `ObjectAnnotations`; altere-o para o produtor da câmera.
+O viewer desenha `keypoints[].position` e o polígono `region.vertices`, incluindo
+bounding boxes de dois cantos ou quatro vértices. O `label` aparece junto ao objeto.
+
+Por padrão, as coordenadas são pixels na resolução indicada em
+`ObjectAnnotations.resolution`. Se o produtor usa valores entre 0 e 1, selecione
+**0–1**. Quando `resolution` não está presente, usa-se a resolução da calibração
+(1280 × 720 para as câmeras 6–8). A opção **Sem distorção** transforma também os
+pontos e os vértices para a imagem corrigida e recortada. Os desenhos expiram
+após 3 segundos sem publicação. A sobreposição 2D pode ser usada junto com a 3D.
+Ela também funciona em câmeras sem calibração cadastrada, sobre a imagem original.
+Cada mensagem 2D substitui o desenho anterior; quadros antigos não se acumulam.
+
+Para abrir a página já com um tópico 2D selecionado, use
+`/camera/1?annotations2d=Meu.Topico`. A saída numérica para outros clientes está
+em `/projection2d/1/Meu.Topico`; adicione `?coordinates=normalized` quando
+necessário.
+
 ## Configurar frequência e cor
 
 Os parâmetros são aplicados quando se abre o stream de um tópico CameraGateway:

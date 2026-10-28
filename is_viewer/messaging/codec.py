@@ -18,6 +18,7 @@ PROTO_TYPES = {
 }
 PROTO_TYPES[Struct.DESCRIPTOR.full_name] = Struct
 SHORT_TYPES = {cls.DESCRIPTOR.name: cls for cls in PROTO_TYPES.values()}
+PUBLISHER_KEYS = ("source", "publisher", "service", "producer", "is-source")
 
 
 def decode_message(message, schema_hint=None) -> tuple[str, bytes]:
@@ -37,6 +38,17 @@ def decode_message(message, schema_hint=None) -> tuple[str, bytes]:
             "schema": decoded.DESCRIPTOR.full_name,
             "message": MessageToDict(decoded, preserving_proto_field_name=True),
         }
+        if decoded.DESCRIPTOR.name == "ObjectAnnotations":
+            publisher = next(
+                (
+                    message.metadata[key]
+                    for key in PUBLISHER_KEYS
+                    if message.metadata.get(key)
+                ),
+                None,
+            )
+            if publisher is not None:
+                value["publisher"] = str(publisher)
         return "json", json.dumps(value, separators=(",", ":")).encode()
     try:
         return "image", bytes(message.unpack(Image).data)

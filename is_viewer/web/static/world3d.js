@@ -2,6 +2,7 @@ const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
 const visibleAxes = { x: true, y: true, z: true };
 let people = [];
+const annotations = new window.AnnotationState();
 let yaw = -0.8;
 let elevation = 0.35;
 let distance = 10;
@@ -249,8 +250,7 @@ function draw() {
 
 function updatePeople(line) {
   const value = JSON.parse(line);
-  const message = value.message || value;
-  people = (message.objects || []).map((object) => ({
+  people = annotations.update(value).map((object) => ({
     id: object.id,
     skeleton_3d: Object.fromEntries(
       (object.keypoints || []).map((keypoint) => [
@@ -266,6 +266,23 @@ function updatePeople(line) {
   }));
   worldStatus.textContent = `${people.length} objeto(s) · leitura às ${new Date().toLocaleTimeString("pt-BR")}`;
 }
+
+setInterval(() => {
+  const before = annotations.sources.size;
+  const active = annotations.objects();
+  if (annotations.sources.size === before) return;
+  people = active.map((object) => ({
+    id: object.id,
+    skeleton_3d: Object.fromEntries(
+      (object.keypoints || []).map((keypoint) => [keypoint.id, [
+        keypoint.position?.x ?? 0,
+        keypoint.position?.y ?? 0,
+        keypoint.position?.z ?? 0,
+      ]]),
+    ),
+  }));
+  worldStatus.textContent = `${people.length} objeto(s) · fontes inativas removidas`;
+}, 250);
 
 async function readAnnotations() {
   const response = await fetch(canvas.dataset.source);

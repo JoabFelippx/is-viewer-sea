@@ -72,6 +72,19 @@ async def camera_projection(request: Request, camera_id: int, topic: str):
     return await projection_response(request, camera_id, topic)
 
 
+@router.get("/projection2d/{camera_id}/{topic:path}")
+async def camera_projection_2d(request: Request, camera_id: int, topic: str):
+    topic = topic.strip("/").strip()
+    if not topic or "/" in topic or len(topic) > 255 or any(c in topic for c in "*#"):
+        raise HTTPException(status_code=400, detail="invalid 2D topic")
+    if request.query_params.get("coordinates", "pixels") not in (
+        "pixels",
+        "normalized",
+    ):
+        raise HTTPException(status_code=400, detail="invalid 2D coordinates")
+    return await projection_response(request, camera_id, topic, dimension=2)
+
+
 @router.get("/camera/{topic:path}")
 async def camera_view(topic: str):
     try:
@@ -119,7 +132,9 @@ async def synthetic3d_view(topic: str):
 
 @router.get("/skeleton3d-data/{topic:path}")
 async def skeleton3d_data(request: Request, topic: str):
-    return await topic_response(request, topic.strip("/"), "ObjectAnnotations")
+    return await topic_response(
+        request, topic.strip("/"), "ObjectAnnotations", preview_mode="merge"
+    )
 
 
 @router.get("/topic/{schema}/{topic:path}")
