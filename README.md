@@ -59,21 +59,30 @@ IS_URI='amqp://usuario:senha@rabbitmq:5672/vhost' uv run server.py
 | `/calib/1` | Parâmetros da câmera 1; os IDs 1–4 e 6–8 estão disponíveis |
 | `/stream/CameraGateway.1.Frame` | Stream MJPEG direto |
 | `/stream/CameraGateway.1.Frame?undistort=1` | MJPEG corrigido pela calibração da câmera 1 |
+| `/projection2d/1/SkeletonDetector.1.Detection` | Anotações 2D em pixels originais e corrigidos, em JSON por linha |
 | `/CameraGateway.1.Frame` | Atalho para o stream direto, sem painel PTZ |
 | `/mosaic/2x3` | Mosaico de 2 linhas e 3 colunas; informe um tópico por célula |
 | `/Struct/Some.Struct.Topic` | Página com mensagens protobuf convertidas em JSON |
 | `/Struct/Some.Struct.Topic?raw=1` | JSON por linha, sem interface |
 | `/world3d/` | Esqueletos do tópico `SkeletonDetector.3D.Annotations` |
 | `/world3d/Meu.Topico` | Esqueletos 3D de outro tópico de `ObjectAnnotations` |
+| `/world3d-sintetico/` | Laboratório GLB com mapa, câmeras e esqueletos do tópico padrão |
+| `/world3d-sintetico/Meu.Topico` | Laboratório GLB com outro tópico de `ObjectAnnotations` |
 
 Os tópicos são exemplos: precisam existir no seu ambiente. O mosaico aceita até
 36 células. Streams de outros serviços, como `SkeletonDetector.2.Frame`, também
 podem ser abertos em `/stream/<topic>`.
 
+O mosaico entrega a grade inteira em um único MJPEG, até 1600 × 900 e 5 quadros/s,
+para reduzir tráfego e diferenças de atraso entre células. Grades maiores usam
+uma frequência menor. A captura das câmeras permanece independente; veja os
+[limites e controles do mosaico](docs/uso.md#mosaico).
+
 ## Capturas das páginas
 
-As capturas foram feitas localmente. As páginas de câmera, mosaico, mensagens e
-World3D exibem feeds ou anotações simulados, identificados na própria imagem.
+As capturas foram feitas localmente. As páginas de câmera, mosaico, mensagens,
+World3D e LabSEA sintético exibem feeds ou anotações simulados, identificados
+na própria imagem.
 As telas de calibração usam os NPZ versionados neste projeto.
 
 <table>
@@ -91,7 +100,7 @@ As telas de calibração usam os NPZ versionados neste projeto.
   </tr>
   <tr>
     <td align="center"><a href="docs/images/calibracao-camera-7.png"><strong>Parâmetros da câmera 7</strong><br><img src="docs/images/calibracao-camera-7.png" width="480" alt="Matrizes intrínsecas e extrínsecas da câmera 7"></a></td>
-    <td></td>
+    <td align="center"><a href="docs/images/labsea-sintetico.png"><strong>LabSEA sintético</strong><br><img src="docs/images/labsea-sintetico.png" width="480" alt="Modelo GLB do laboratório com uma anotação simulada"></a></td>
   </tr>
 </table>
 
@@ -143,9 +152,6 @@ Comece por `server.py`, siga para `is_viewer/app.py` e depois para
 `is_viewer/web/routes.py`. O [guia de arquitetura](docs/arquitetura.md) acompanha
 uma requisição desde o navegador até o broker e de volta.
 
-O arquivo `is-viewer-sea.py` é um experimento independente de envio de PTZ, com
-endereço e câmera fixos. Ele não faz parte da inicialização do viewer.
-
 ## Docker e Kubernetes
 
 ```bash
@@ -189,10 +195,19 @@ O painel PTZ tem **HOME (0, 0, 0)** e leitura da posição atual. O World3D acei
 URLs como `/MeuServico.World3D`, navegação pelo botão central, marcadores das
 câmeras 1–4 e a opção de mapa com câmeras 6–8.
 
+As páginas World3D reúnem objetos publicados por vários serviços no mesmo tópico.
+Cada mensagem substitui o quadro anterior da origem associada, para que mudanças
+de ID ou objetos ausentes não deixem rastros.
+Para evitar oscilações e lentidão em fluxos intensos, suas visualizações ignoram
+mensagens vazias sem origem identificada e repetições idênticas. A rota genérica
+`/ObjectAnnotations/<topic>` não aplica esse filtro. Veja o
+[comportamento de múltiplos publicadores](docs/world3d.md#múltiplos-publicadores-no-mesmo-tópico).
+
 - [Uso de HOME e posição PTZ](docs/uso.md#home-e-posição-ptz)
 - [Correção da lente e anotações 3D na imagem](docs/uso.md#correção-da-lente-e-anotações-3d-na-imagem)
+- [Sobreposição de pontos e bounding boxes 2D](docs/uso.md#sobreposição-de-anotações-2d)
 - [World3D e atualização do mapa/calibrações](docs/world3d.md)
-- [Análise da futura integração do LabSEA GLB](docs/labsea-glb.md)
+- [LabSEA sintético: uso, arquivos e referencial](docs/labsea-glb.md)
 
 `httpx`/`httpx2` atendem às versões do cliente de testes Starlette. NumPy e
 OpenCV também são instalados com o projeto para corrigir o MJPEG e projetar as

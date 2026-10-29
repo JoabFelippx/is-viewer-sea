@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabSEA sintético — IS Viewer</title>
+    <link rel="stylesheet" href="/static/world3d-synthetic.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/static/vendor/three/three.module.js",
+          "three/addons/": "/static/vendor/three/addons/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Outras visualizações">
+        <a href="/">IS Viewer</a>
+        <a href="$world_url">World3D simples</a>
+        <a href="/calib">Calibração</a>
+      </nav>
+      <h1>LabSEA sintético</h1>
+      <form id="topic-form">
+        <label for="world-topic">Tópico 3D</label>
+        <input id="world-topic" value="$topic" required />
+        <button type="submit">Abrir</button>
+      </form>
+      <div class="layers" role="group" aria-label="Camadas da cena">
+        <label><input id="show-lab" type="checkbox" checked /> Laboratório</label>
+        <label><input id="show-walls" type="checkbox" checked /> Paredes e teto</label>
+        <label><input id="show-chairs" type="checkbox" checked /> Cadeiras</label>
+        <label><input id="show-axes" type="checkbox" checked /> Eixos e grade</label>
+        <label><input id="show-cameras" type="checkbox" checked /> Câmeras 1–4</label>
+        <label><input id="show-map" type="checkbox" /> Mapa</label>
+        <label><input id="show-extra-cameras" type="checkbox" /> Câmeras 6–8</label>
+        <label><input id="show-people" type="checkbox" checked /> Esqueletos</label>
+        <button id="fit-scene" type="button">Enquadrar</button>
+      </div>
+      <p class="help">Arraste para girar · Botão central para deslocar · Roda para zoom</p>
+      <output id="model-status" aria-live="polite">Carregando laboratório…</output>
+      <output id="world-status" aria-live="polite">Aguardando anotações…</output>
+    </header>
+    <main id="scene-view" data-source="$source" aria-label="Cena 3D do LabSEA">
+      <div id="camera-labels"></div>
+    </main>
+    <script src="/static/annotation-state.js"></script>
+    <script type="module" src="/static/world3d-synthetic.js"></script>
+  </body>
+</html>

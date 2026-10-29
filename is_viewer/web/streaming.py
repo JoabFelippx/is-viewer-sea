@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 
 from ..config import CAMERA_TOPIC
 from .pages import messages_html
-from .vision import project_annotations
+from .vision import project_annotations, transform_annotations_2d
 
 BOUNDARY = b"--myboundary\r\n"
 LOG = logging.getLogger(__name__)
@@ -20,13 +20,18 @@ async def topic_response(
     topic: str,
     schema_hint=None,
     image_transform: Callable[[bytes], bytes] | None = None,
+    preview_mode: str | None = None,
 ):
     topic = topic.strip("/")
     if topic.endswith(".Frame"):
         schema_hint = "Image"
     is_image = schema_hint in ("Image", "is.vision.Image")
     try:
-        default_history = "1"
+        default_history = (
+            "100"
+            if schema_hint in ("ObjectAnnotations", "is.vision.ObjectAnnotations")
+            else "1"
+        )
         history = int(request.query_params.get("history", default_history))
     except ValueError:
         raise HTTPException(
@@ -54,7 +59,12 @@ async def topic_response(
         return HTMLResponse(messages_html(raw_url, history))
 
     loop = asyncio.get_running_loop()
-    token, queue = hub.add_client(loop, topic, schema_hint, history)
+    if preview_mode:
+        token, queue = hub.add_client(
+            loop, topic, schema_hint, history, preview_mode=preview_mode
+        )
+    else:
+        token, queue = hub.add_client(loop, topic, schema_hint, history)
 
     async def body():
         try:
@@ -89,11 +99,19 @@ async def topic_response(
     )
 
 
-async def projection_response(request: Request, camera_id: int, topic: str):
-    """Entrega os pontos 3D projetados nos dois espaços de pixels da câmera."""
+async def projection_response(
+    request: Request, camera_id: int, topic: str, dimension: int = 3
+):
+    """Entrega anotações 2D ou 3D nos espaços de pixels da câmera."""
     loop = asyncio.get_running_loop()
     hub = request.app.state.hub
-    token, queue = hub.add_client(loop, topic, "ObjectAnnotations", 1)
+    token, queue = hub.add_client(
+        loop,
+        topic,
+        "ObjectAnnotations",
+        100,
+        preview_mode="snapshot" if dimension == 2 else "merge",
+    )
 
     async def body():
         try:
@@ -102,11 +120,19 @@ async def projection_response(request: Request, camera_id: int, topic: str):
                 if kind != "json":
                     continue
                 try:
-                    projected = await asyncio.to_thread(
-                        project_annotations, payload, camera_id
-                    )
+                    if dimension == 2:
+                        projected = await asyncio.to_thread(
+                            transform_annotations_2d,
+                            payload,
+                            camera_id,
+                            request.query_params.get("coordinates", "pixels"),
+                        )
+                    else:
+                        projected = await asyncio.to_thread(
+                            project_annotations, payload, camera_id
+                        )
                 except (ValueError, TypeError, KeyError):
-                    LOG.exception("event=invalid_3d_annotation topic=%r", topic)
+                    LOG.exception("event=invalid_annotation topic=%r", topic)
                     continue
                 yield projected + b"\n"
         finally:

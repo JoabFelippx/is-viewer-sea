@@ -53,7 +53,20 @@ def mosaic_html(rows: int, columns: int) -> str:
 def skeleton3d_html(topic: str) -> str:
     source = "/skeleton3d-data/" + quote(topic, safe="")
     return _render(
-        "world3d.html", topic=escape(topic), source=escape(source, quote=True)
+        "world3d.html",
+        topic=escape(topic, quote=True),
+        source=escape(source, quote=True),
+        synthetic_url=escape("/world3d-sintetico/" + quote(topic, safe=""), quote=True),
+    )
+
+
+def synthetic3d_html(topic: str) -> str:
+    encoded = quote(topic, safe="")
+    return _render(
+        "world3d-synthetic.html",
+        topic=escape(topic, quote=True),
+        source=escape("/skeleton3d-data/" + encoded, quote=True),
+        world_url=escape("/world3d/" + encoded, quote=True),
     )
 
 

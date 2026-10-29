@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from google.protobuf.struct_pb2 import Struct
 from is_msgs.image_pb2 import Image
+from is_msgs.image_pb2 import ObjectAnnotations
 from is_wire.core import Message
 
 from is_viewer.config import Settings, camera_topics, normalize_camera_topic
@@ -84,6 +85,14 @@ class CodecTests(unittest.TestCase):
         self.assertEqual(json.loads(body)["body_base64"], "/w==")
         self.assertEqual(json.loads(body)["bytes"], 1)
 
+    def test_annotation_publisher_is_exposed_without_changing_other_schemas(self):
+        message = Message(content=ObjectAnnotations())
+        message.topic = "Shared.World3D"
+        message.metadata["source"] = "detector-a"
+        kind, body = decode_message(message, "ObjectAnnotations")
+        self.assertEqual(kind, "json")
+        self.assertEqual(json.loads(body)["publisher"], "detector-a")
+
 
 class HubTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -151,6 +160,71 @@ class HubTests(unittest.IsolatedAsyncioTestCase):
         latest = Mock(topic="A")
         self.channel.consume.side_effect = [other, latest, TimeoutError()]
         self.assertEqual(set(self.hub._latest_messages(first)), {latest, other})
+
+    async def test_annotation_messages_from_same_topic_are_all_preserved(self):
+        first = Mock(topic="Shared.World3D")
+        second = Mock(topic="Shared.World3D")
+        self.channel.consume.side_effect = [second, TimeoutError()]
+        self.assertEqual(
+            self.hub._latest_messages(first, {"Shared.World3D"}), (first, second)
+        )
+
+    async def test_preview_ignores_empty_flood_and_keeps_distinct_labels(self):
+        token, _ = self.hub.add_client(
+            asyncio.get_running_loop(),
+            "Shared.World3D",
+            "ObjectAnnotations",
+            preview_mode="merge",
+        )
+        client = self.hub.clients[token]
+
+        def sample(label, x):
+            annotations = ObjectAnnotations()
+            item = annotations.objects.add()
+            item.label = label
+            item.id = 2
+            item.keypoints.add().position.x = x
+            return Message(content=annotations)
+
+        human = sample("human_3d", 1)
+        moved = sample("human_3d", 2)
+        chair = sample("chair", 1)
+        self.assertTrue(self.hub._accept_preview(client, human, now=0))
+        self.assertFalse(self.hub._accept_preview(client, human, now=0.001))
+        # Mesmo id e label podem representar serviços distintos.
+        self.assertTrue(self.hub._accept_preview(client, moved, now=0.01))
+        self.assertFalse(self.hub._accept_preview(client, moved, now=0.02))
+        self.assertTrue(self.hub._accept_preview(client, chair, now=0.021))
+        self.assertTrue(self.hub._accept_preview(client, moved, now=1.2))
+        self.assertFalse(
+            self.hub._accept_preview(
+                client, Message(content=ObjectAnnotations()), now=0.03
+            )
+        )
+
+    async def test_snapshot_preview_passes_empty_to_clear_overlay(self):
+        token, _ = self.hub.add_client(
+            asyncio.get_running_loop(),
+            "Detector.1.Detection",
+            "ObjectAnnotations",
+            preview_mode="snapshot",
+        )
+        client = self.hub.clients[token]
+        nonempty = ObjectAnnotations()
+        nonempty.objects.add().label = "person"
+        self.assertTrue(
+            self.hub._accept_preview(client, Message(content=nonempty), now=0)
+        )
+        self.assertTrue(
+            self.hub._accept_preview(
+                client, Message(content=ObjectAnnotations()), now=0.01
+            )
+        )
+        self.assertFalse(
+            self.hub._accept_preview(
+                client, Message(content=ObjectAnnotations()), now=0.02
+            )
+        )
 
 
 class RpcTests(unittest.TestCase):

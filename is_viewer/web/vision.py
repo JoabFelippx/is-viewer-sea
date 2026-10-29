@@ -26,6 +26,16 @@ def calibration(camera_id: int) -> dict:
     raise HTTPException(status_code=404, detail="camera calibration not found")
 
 
+@cache
+def optional_calibration(camera_id: int) -> dict | None:
+    try:
+        return calibration(camera_id)
+    except HTTPException as error:
+        if error.status_code != 404:
+            raise
+        return None
+
+
 def image_size(camera: dict) -> tuple[int, int]:
     recorded = camera["intrinsics"]["image_size"]
     if recorded:
@@ -132,4 +142,81 @@ def project_annotations(payload: bytes, camera_id: int) -> bytes:
         ]
         if keypoints:
             objects.append({"id": item.get("id"), "keypoints": keypoints})
-    return json.dumps({"objects": objects}, separators=(",", ":")).encode()
+    result = {"objects": objects}
+    if "publisher" in value:
+        result["publisher"] = value["publisher"]
+    return json.dumps(result, separators=(",", ":")).encode()
+
+
+def transform_annotations_2d(
+    payload: bytes, camera_id: int, coordinates: str = "pixels"
+) -> bytes:
+    """Converte pontos e polígonos 2D em pixels originais e corrigidos."""
+    if coordinates not in ("pixels", "normalized"):
+        raise ValueError("coordinates must be pixels or normalized")
+    camera = optional_calibration(camera_id)
+    intrinsics = camera["intrinsics"] if camera else None
+    width, height = image_size(camera) if camera else DEFAULT_IMAGE_SIZE
+    value = json.loads(payload)
+    message = value.get("message", value)
+    resolution = message.get("resolution") or {}
+    source_width = float(resolution.get("width") or width)
+    source_height = float(resolution.get("height") or height)
+    if source_width <= 0 or source_height <= 0:
+        raise ValueError("invalid annotation resolution")
+    scale = np.asarray(
+        [width, height]
+        if coordinates == "normalized"
+        else [width / source_width, height / source_height],
+        dtype=np.float64,
+    )
+    if intrinsics:
+        raw_matrix = np.asarray(intrinsics["raw"], dtype=np.float64)
+        corrected_matrix = np.asarray(intrinsics["undistorted"], dtype=np.float64)
+        distortion = np.asarray(intrinsics["distortion"], dtype=np.float64)
+        roi = np.asarray(intrinsics["roi_xywh"][:2], dtype=np.float64)
+
+    def convert(position):
+        xy = (
+            np.asarray([position.get("x", 0), position.get("y", 0)], dtype=np.float64)
+            * scale
+        )
+        if not np.isfinite(xy).all():
+            return None
+        corrected = (
+            cv2.undistortPoints(
+                xy.reshape(1, 1, 2), raw_matrix, distortion, P=corrected_matrix
+            ).reshape(2)
+            - roi
+            if intrinsics
+            else xy
+        )
+        if not np.isfinite(corrected).all():
+            return None
+        return {"raw": xy.tolist(), "corrected": corrected.tolist()}
+
+    objects = []
+    for item in message.get("objects", []):
+        keypoints = []
+        for point in item.get("keypoints", []):
+            pixels = convert(point.get("position") or {})
+            if pixels is not None:
+                keypoints.append({"id": point.get("id"), **pixels})
+        region = []
+        for vertex in (item.get("region") or {}).get("vertices", []):
+            pixels = convert(vertex)
+            if pixels is not None:
+                region.append(pixels)
+        if keypoints or region:
+            objects.append(
+                {
+                    "id": item.get("id"),
+                    "label": item.get("label", ""),
+                    "keypoints": keypoints,
+                    "region": region,
+                }
+            )
+    result = {"objects": objects}
+    if "publisher" in value:
+        result["publisher"] = value["publisher"]
+    return json.dumps(result, separators=(",", ":")).encode()

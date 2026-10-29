@@ -6,9 +6,21 @@
   <div class="camera-toolbar" hidden>
     <button class="undistort-toggle" type="button" hidden>Sem distorção</button>
     <button class="overlay-toggle" type="button" hidden>Sobrepor 3D</button>
+    <button class="overlay-2d-toggle" type="button" hidden>Sobrepor 2D</button>
     <label class="annotation-topic" hidden>
       Tópico 3D
       <input value="SkeletonDetector.3D.Annotations" aria-label="Tópico das anotações 3D" />
+    </label>
+    <label class="annotation-2d-topic" hidden>
+      Tópico 2D
+      <input aria-label="Tópico das anotações 2D" />
+    </label>
+    <label class="annotation-2d-coordinates" hidden>
+      Coordenadas
+      <select aria-label="Coordenadas das anotações 2D">
+        <option value="pixels">Pixels</option>
+        <option value="normalized">0–1</option>
+      </select>
     </label>
     <button class="ptz-toggle" type="button" hidden aria-label="Abrir controles PTZ">PTZ</button>
   </div>

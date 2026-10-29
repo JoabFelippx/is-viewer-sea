@@ -10,12 +10,14 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..config import CAMERA_TOPIC, normalize_camera_topic
+from .mosaic import mosaic_response
 from .pages import (
     calibration_html,
     dashboard_html,
     home_html,
     mosaic_html,
     skeleton3d_html,
+    synthetic3d_html,
 )
 from .streaming import projection_response, topic_response
 from .vision import calibration, undistort_jpeg
@@ -71,6 +73,19 @@ async def camera_projection(request: Request, camera_id: int, topic: str):
     return await projection_response(request, camera_id, topic)
 
 
+@router.get("/projection2d/{camera_id}/{topic:path}")
+async def camera_projection_2d(request: Request, camera_id: int, topic: str):
+    topic = topic.strip("/").strip()
+    if not topic or "/" in topic or len(topic) > 255 or any(c in topic for c in "*#"):
+        raise HTTPException(status_code=400, detail="invalid 2D topic")
+    if request.query_params.get("coordinates", "pixels") not in (
+        "pixels",
+        "normalized",
+    ):
+        raise HTTPException(status_code=400, detail="invalid 2D coordinates")
+    return await projection_response(request, camera_id, topic, dimension=2)
+
+
 @router.get("/camera/{topic:path}")
 async def camera_view(topic: str):
     try:
@@ -80,15 +95,41 @@ async def camera_view(topic: str):
     return HTMLResponse(dashboard_html([topic]))
 
 
-@router.get("/mosaic/{layout}")
-async def mosaic_view(layout: str):
+def mosaic_dimensions(layout: str) -> tuple[int, int]:
     match = re.fullmatch(r"([1-9][0-9]*)x([1-9][0-9]*)", layout)
     if match is None:
         raise HTTPException(status_code=400, detail="layout must be ROWSxCOLUMNS")
     rows, columns = (int(value) for value in match.groups())
     if rows * columns > 36:
         raise HTTPException(status_code=400, detail="mosaic cannot exceed 36 cells")
+    return rows, columns
+
+
+@router.get("/mosaic/{layout}")
+async def mosaic_view(layout: str):
+    rows, columns = mosaic_dimensions(layout)
     return HTMLResponse(mosaic_html(rows, columns))
+
+
+@router.get("/mosaic-stream/{layout}")
+async def mosaic_stream(request: Request, layout: str):
+    rows, columns = mosaic_dimensions(layout)
+    topics = [topic.strip() for topic in request.query_params.getlist("topic")]
+    if len(topics) != rows * columns:
+        raise HTTPException(status_code=400, detail="one topic is required per cell")
+    if any(
+        len(topic) > 255 or "/" in topic or any(char in topic for char in "*#")
+        for topic in topics
+    ):
+        raise HTTPException(status_code=400, detail="invalid image topic")
+    try:
+        width = int(request.query_params.get("width", "1280"))
+        height = int(request.query_params.get("height", "720"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid mosaic size") from None
+    if not (160 <= width <= 1600 and 120 <= height <= 900):
+        raise HTTPException(status_code=400, detail="invalid mosaic size")
+    return await mosaic_response(request, topics, rows, columns, width, height)
 
 
 @router.get("/skeleton3d/{topic:path}")
@@ -106,9 +147,21 @@ async def world3d_view(topic: str):
     return HTMLResponse(skeleton3d_html(topic.strip("/")))
 
 
+@router.get("/world3d-sintetico/")
+async def synthetic3d_default_view():
+    return HTMLResponse(synthetic3d_html("SkeletonDetector.3D.Annotations"))
+
+
+@router.get("/world3d-sintetico/{topic:path}")
+async def synthetic3d_view(topic: str):
+    return HTMLResponse(synthetic3d_html(topic.strip("/")))
+
+
 @router.get("/skeleton3d-data/{topic:path}")
 async def skeleton3d_data(request: Request, topic: str):
-    return await topic_response(request, topic.strip("/"), "ObjectAnnotations")
+    return await topic_response(
+        request, topic.strip("/"), "ObjectAnnotations", preview_mode="merge"
+    )
 
 
 @router.get("/topic/{schema}/{topic:path}")

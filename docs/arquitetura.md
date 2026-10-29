@@ -53,12 +53,25 @@ Mensagens comuns compartilham a assinatura do hub.
 O serviço encaminha os bytes da imagem sem recompressão. O protocolo HTTP atual
 anuncia `image/jpeg`, portanto o produtor deve enviar JPEG para esse fluxo MJPEG.
 
+O mosaico usa `/mosaic-stream/<layout>` e `web/mosaic.py`. Cada tópico distinto
+tem uma fila de uma posição no hub; os consumidores AMQP são compartilhados
+com os streams individuais. A cada ciclo, a composição usa os quadros recentes,
+redimensiona as imagens mantendo sua proporção e codifica uma única grade JPEG.
+O trabalho OpenCV roda fora do event loop HTTP. Ao desconectar, as assinaturas
+da grade são removidas. Não há sincronização por timestamp de captura.
+
+A saída é limitada a 1600 × 900, qualidade JPEG 75 e até 5 quadros/s, com orçamento
+de 24 imagens decodificadas por segundo por mosaico. O custo de composição ocorre
+no servidor por conexão de mosaico; várias grades simultâneas aumentam esse custo.
+Imagens repetidas em mais de uma célula são decodificadas uma vez por ciclo.
+
 ## 3. Como threads e filas se encontram
 
 AMQP usa operações bloqueantes; os consumidores rodam em threads. FastAPI usa
 um event loop assíncrono para entregar as respostas HTTP.
 
-Cada `Client` contém campos nomeados: `loop`, `queue`, `topic` e `schema_hint`.
+Cada `Client` contém `loop`, `queue`, `topic` e `schema_hint`. As visualizações de
+anotações também usam `preview_mode` e `last_preview` para filtrar repetições.
 O hub usa um lock para acessar o registro de clientes e faz uma cópia dele antes
 de distribuir uma mensagem. `loop.call_soon_threadsafe(...)` agenda a escrita na
 fila dentro do event loop que a possui. Isso evita escrever em `asyncio.Queue`
@@ -69,10 +82,32 @@ mais antiga é descartada antes de inserir a nova. Um navegador lento não bloqu
 os demais clientes. O `finally` do gerador HTTP remove o cliente ao terminar a
 resposta, inclusive quando ela é cancelada.
 
+Os fluxos de `ObjectAnnotations` usam por padrão uma fila de 100 mensagens para
+preservar publicações próximas de vários serviços; fluxos de imagem e mensagens
+comuns continuam com uma posição por padrão. A expiração visual ocorre no
+navegador após três segundos sem atualização de cada objeto ou origem.
+
+No World3D, `annotation-state.js` associa cada mensagem sem `source` a um grupo
+anônimo pela proximidade dos objetos com o mesmo rótulo. O lote completo mais
+recente substitui o anterior desse grupo. IDs instáveis do detector não deixam
+objetos antigos desenhados; grupos distantes podem continuar ativos ao mesmo
+tempo. Sem origem explícita, publicadores com objetos sobrepostos continuam
+ambíguos.
+
 Além desse limite, o consumidor de mensagens comuns drena entregas já pendentes
-e mantém apenas a última por tópico. Portanto, `history=10` permite uma janela
-recente de até 10 mensagens entregues; não oferece armazenamento nem reprodução
-completa do histórico do broker.
+e mantém apenas a última por tópico, exceto para `ObjectAnnotations`: nesse caso,
+preserva as mensagens dos publicadores distintos. Portanto, `history=10` permite
+uma janela recente de até 10 mensagens entregues; não oferece armazenamento nem
+reprodução completa do histórico do broker.
+
+`/skeleton3d-data/<topic>` e as projeções de câmera são fluxos de visualização.
+Antes da conversão protobuf → JSON, o hub descarta mensagens vazias sem origem
+nos fluxos 3D, pois elas não indicam qual publicador deve ser apagado. O navegador
+remove cada objeto após três segundos sem atualização. Repetições consecutivas
+do mesmo conteúdo são encaminhadas uma vez por segundo por identidade de objetos
+ou por origem declarada; mudanças de posição passam imediatamente. Na
+projeção 2D, cada mensagem é um quadro completo: uma mensagem vazia apaga o
+desenho. A rota genérica `/ObjectAnnotations/<topic>` não aplica esse filtro.
 
 ## 4. Como protobuf vira JSON
 

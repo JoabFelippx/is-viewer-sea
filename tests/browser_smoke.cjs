@@ -60,6 +60,19 @@ const assert = require('node:assert/strict');
 
     await page.goto(base + '/Detector.World3D');
     await page.waitForFunction(() => scene.cameras.length === 7);
+    const anonymousObjects = await page.evaluate(() => {
+      const state = new window.AnnotationState();
+      const chair = (id, x) => ({
+        id, label: 'chair', keypoints: [{ position: { x, y: 0, z: 0 } }],
+      });
+      state.update({ message: { objects: [chair(1, 0), chair(2, 5)] } }, 0);
+      // Outro serviço usa os mesmos IDs, mas ocupa outra região do mapa.
+      state.update({ message: { objects: [chair(1, 10), chair(2, 15)] } }, 100);
+      // O primeiro serviço troca IDs e deixa de publicar uma cadeira.
+      const objects = state.update({ message: { objects: [chair(2, 0.1)] } }, 200);
+      return objects.map(object => object.keypoints[0].position.x).sort((a, b) => a - b);
+    });
+    assert.deepEqual(anonymousObjects, [0.1, 10, 15]);
     assert.equal(await page.evaluate(() => scene.visibleCameras().length), 4);
     assert.equal(await page.evaluate(() => people[0].skeleton_3d[7][0]), 0);
     assert.equal(await page.locator('#world-topic').inputValue(), 'Detector.World3D');

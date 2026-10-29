@@ -13,7 +13,7 @@ from starlette.requests import Request
 from is_viewer.app import create_app
 from is_viewer.cameras import CameraService, PositionUnavailable, PtzStep
 from is_viewer.config import Settings
-from is_viewer.web.streaming import topic_response
+from is_viewer.web.streaming import projection_response, topic_response
 
 
 class RouteTests(unittest.TestCase):
@@ -38,6 +38,8 @@ class RouteTests(unittest.TestCase):
             "/mosaic/2x3",
             "/world3d/",
             "/world3d/Custom.Topic",
+            "/world3d-sintetico/",
+            "/world3d-sintetico/Custom.Topic",
         ):
             with self.subTest(path=path):
                 response = self.client.get(path)
@@ -47,6 +49,22 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("setupCamera", response.text)
         self.assertEqual(self.client.get("/static/missing.js").status_code, 404)
+
+    def test_synthetic_view_preserves_topic_without_subscribing_on_page_load(self):
+        response = self.client.get("/world3d-sintetico/Tracking.World3D")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("/skeleton3d-data/Tracking.World3D", response.text)
+        self.assertIn(
+            "/static/models/labsea.glb",
+            self.client.get("/static/world3d-synthetic.js").text,
+        )
+        self.assertEqual(
+            self.client.get("/static/models/labsea.glb").content[:4], b"glTF"
+        )
+        self.assertEqual(
+            self.client.get("/static/vendor/three/three.core.js").status_code, 200
+        )
+        self.hub.add_client.assert_not_called()
 
     def test_invalid_camera_and_mosaic(self):
         for path in (
@@ -288,6 +306,39 @@ class StreamTests(unittest.IsolatedAsyncioTestCase):
         response, hub = await self.response("Struct", ("json", b'{"ok":true}'))
         body = b"".join([part async for part in response.body_iterator])
         self.assertEqual(body, b'{"ok":true}\n')
+        hub.remove_client.assert_called_once_with("token")
+
+    async def test_annotations_keep_burst_capacity_for_multiple_publishers(self):
+        response, hub = await self.response(
+            "ObjectAnnotations", ("json", b'{"objects":[]}')
+        )
+        self.assertEqual(hub.add_client.call_args.args[2:], ("ObjectAnnotations", 100))
+        body = b"".join([part async for part in response.body_iterator])
+        self.assertEqual(body, b'{"objects":[]}\n')
+
+    async def test_2d_projection_works_without_camera_calibration(self):
+        queue = asyncio.Queue()
+        queue.put_nowait(
+            (
+                "json",
+                b'{"message":{"objects":[{"id":1,"keypoints":[{"id":7,"position":{"x":640,"y":360}}]}]}}',
+            )
+        )
+        hub = Mock()
+        hub.add_client.return_value = ("token", queue)
+        app = SimpleNamespace(state=SimpleNamespace(hub=hub))
+        request = Request(
+            {"type": "http", "app": app, "query_string": b"", "headers": []}
+        )
+        request.is_disconnected = AsyncMock(side_effect=[False, True])
+        with patch(
+            "is_viewer.web.streaming.asyncio.to_thread",
+            new=AsyncMock(side_effect=lambda func, *args: func(*args)),
+        ):
+            response = await projection_response(request, 5, "Detector.5.Detection", 2)
+            body = b"".join([part async for part in response.body_iterator])
+        self.assertIn(b'"raw":[640.0,360.0]', body)
+        self.assertEqual(hub.add_client.call_args.args[2:], ("ObjectAnnotations", 100))
         hub.remove_client.assert_called_once_with("token")
 
     async def test_cancelled_stream_removes_client(self):

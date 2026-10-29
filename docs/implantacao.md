@@ -26,14 +26,14 @@ O exemplo está em [`../k8s/is-viewer.yaml`](../k8s/is-viewer.yaml).
 1. Construa uma imagem com este código e publique no registry do seu ambiente:
 
    ```bash
-   docker build -t joabfsl/is-viewer:2.2.0 .
+   docker build -t joabfsl/is-viewer:labsea-sintetico .
    docker login -u joabfsl
-   docker push joabfsl/is-viewer:2.2.0
+   docker push joabfsl/is-viewer:labsea-sintetico
    ```
 
-2. O manifesto já aponta para `joabfsl/is-viewer:2.2.0`. Publique a imagem antes
-   de aplicar o YAML; esse nome de imagem só estará disponível no cluster depois
-   que o push terminar.
+2. O manifesto desta branch aponta para a imagem sintética publicada, fixada
+   pelo digest. Se reconstruir e publicar outra imagem, atualize o digest no
+   campo `image` antes de aplicar o YAML.
 
 3. Crie o Secret esperado pelo Deployment, no mesmo namespace:
 
@@ -59,8 +59,32 @@ O exemplo está em [`../k8s/is-viewer.yaml`](../k8s/is-viewer.yaml).
    kubectl port-forward service/is-viewer 3000:3000
    ```
 
-   Abra `http://localhost:3000/`. O Service também define **NodePort 30300**:
-   quando a rede permite, use `http://IP_DO_NODE:30300/`.
+   Abra `http://localhost:3000/`. O Service desse manifesto define **NodePort 30400**:
+   quando a rede permite, use `http://IP_DO_NODE:30400/`.
+
+### Instalação ativa na porta 30300
+
+O arquivo `k8s/is-viewer-sintetico.yaml` corresponde ao Deployment atualmente
+usado na porta 30300. Ele usa o Secret `rabbitmq-uri` e a tag
+`joabfsl/is-viewer:world-multi-2d`, fixada por digest. Para publicar alterações
+feitas neste repositório mantendo a tag:
+
+```bash
+docker build -t joabfsl/is-viewer:world-multi-2d .
+docker push joabfsl/is-viewer:world-multi-2d
+```
+
+Depois do push, obtenha o novo digest no registry, atualize o campo `image` em
+`k8s/is-viewer-sintetico.yaml` e aplique esse arquivo:
+
+```bash
+kubectl diff -f k8s/is-viewer-sintetico.yaml
+kubectl apply -f k8s/is-viewer-sintetico.yaml
+kubectl rollout status deployment/is-viewer
+```
+
+Uma nova publicação com a mesma tag não altera o pod enquanto o Deployment
+continuar apontando para o digest anterior.
 
 Use `-n SEU_NAMESPACE` nos comandos se estiver fora do namespace padrão. O
 manifesto usa uma réplica e probes TCP. Elas verificam a porta HTTP, sem garantir
