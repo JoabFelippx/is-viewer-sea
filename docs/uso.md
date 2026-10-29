@@ -123,6 +123,19 @@ ffmpeg -use_wallclock_as_timestamps 1 -f mjpeg \
 As células aceitam imagens de outros produtores, como `SkeletonDetector.2.Frame`.
 A escolha dos tópicos não é persistida ao recarregar a página.
 
+O mosaico recebe um único MJPEG composto no servidor, usando o quadro mais
+recente de cada tópico. A saída acompanha a proporção da janela, até 1600 × 900,
+com JPEG de qualidade 75 e até 5 quadros/s. Acima de quatro tópicos, a frequência
+é limitada também pelo orçamento de 24 decodificações por segundo. Isso reduz
+o volume transferido e evita que cada célula acumule um atraso diferente no
+navegador. A frequência de publicação das câmeras não é alterada.
+
+As células aparecem no mesmo quadro de saída, mas a captura das câmeras continua
+independente: não há alinhamento por timestamp. Uma câmera sem novos quadros por
+um segundo fica preta. Para remover uma câmera, limpe seu campo e clique em
+**Abrir**. A rota `/stream/<topic>` continua oferecendo a imagem individual na
+resolução e frequência originais.
+
 ## Mensagens protobuf e JSON
 
 Prefira informar o schema explicitamente:

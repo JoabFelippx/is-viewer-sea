@@ -46,7 +46,7 @@ spec:
 
       containers:
         - name: viewer
-          image: joabfsl/is-viewer:world-multi-2d@sha256:ee3ca74945fdabd63465960cc641a80e129fdc89447cfb7cbab163abee73b2a8
+          image: joabfsl/is-viewer:world-multi-2d@sha256:62250ad872dd8521763482134fcb43d7e53721575138d85350ceaf9147a13167
 
           imagePullPolicy: IfNotPresent
 

@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..config import CAMERA_TOPIC, normalize_camera_topic
+from .mosaic import mosaic_response
 from .pages import (
     calibration_html,
     dashboard_html,
@@ -94,15 +95,41 @@ async def camera_view(topic: str):
     return HTMLResponse(dashboard_html([topic]))
 
 
-@router.get("/mosaic/{layout}")
-async def mosaic_view(layout: str):
+def mosaic_dimensions(layout: str) -> tuple[int, int]:
     match = re.fullmatch(r"([1-9][0-9]*)x([1-9][0-9]*)", layout)
     if match is None:
         raise HTTPException(status_code=400, detail="layout must be ROWSxCOLUMNS")
     rows, columns = (int(value) for value in match.groups())
     if rows * columns > 36:
         raise HTTPException(status_code=400, detail="mosaic cannot exceed 36 cells")
+    return rows, columns
+
+
+@router.get("/mosaic/{layout}")
+async def mosaic_view(layout: str):
+    rows, columns = mosaic_dimensions(layout)
     return HTMLResponse(mosaic_html(rows, columns))
+
+
+@router.get("/mosaic-stream/{layout}")
+async def mosaic_stream(request: Request, layout: str):
+    rows, columns = mosaic_dimensions(layout)
+    topics = [topic.strip() for topic in request.query_params.getlist("topic")]
+    if len(topics) != rows * columns:
+        raise HTTPException(status_code=400, detail="one topic is required per cell")
+    if any(
+        len(topic) > 255 or "/" in topic or any(char in topic for char in "*#")
+        for topic in topics
+    ):
+        raise HTTPException(status_code=400, detail="invalid image topic")
+    try:
+        width = int(request.query_params.get("width", "1280"))
+        height = int(request.query_params.get("height", "720"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid mosaic size") from None
+    if not (160 <= width <= 1600 and 120 <= height <= 900):
+        raise HTTPException(status_code=400, detail="invalid mosaic size")
+    return await mosaic_response(request, topics, rows, columns, width, height)
 
 
 @router.get("/skeleton3d/{topic:path}")

@@ -53,6 +53,18 @@ Mensagens comuns compartilham a assinatura do hub.
 O serviço encaminha os bytes da imagem sem recompressão. O protocolo HTTP atual
 anuncia `image/jpeg`, portanto o produtor deve enviar JPEG para esse fluxo MJPEG.
 
+O mosaico usa `/mosaic-stream/<layout>` e `web/mosaic.py`. Cada tópico distinto
+tem uma fila de uma posição no hub; os consumidores AMQP são compartilhados
+com os streams individuais. A cada ciclo, a composição usa os quadros recentes,
+redimensiona as imagens mantendo sua proporção e codifica uma única grade JPEG.
+O trabalho OpenCV roda fora do event loop HTTP. Ao desconectar, as assinaturas
+da grade são removidas. Não há sincronização por timestamp de captura.
+
+A saída é limitada a 1600 × 900, qualidade JPEG 75 e até 5 quadros/s, com orçamento
+de 24 imagens decodificadas por segundo por mosaico. O custo de composição ocorre
+no servidor por conexão de mosaico; várias grades simultâneas aumentam esse custo.
+Imagens repetidas em mais de uma célula são decodificadas uma vez por ciclo.
+
 ## 3. Como threads e filas se encontram
 
 AMQP usa operações bloqueantes; os consumidores rodam em threads. FastAPI usa

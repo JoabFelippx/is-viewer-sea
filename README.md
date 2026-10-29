@@ -73,6 +73,11 @@ Os tópicos são exemplos: precisam existir no seu ambiente. O mosaico aceita at
 36 células. Streams de outros serviços, como `SkeletonDetector.2.Frame`, também
 podem ser abertos em `/stream/<topic>`.
 
+O mosaico entrega a grade inteira em um único MJPEG, até 1600 × 900 e 5 quadros/s,
+para reduzir tráfego e diferenças de atraso entre células. Grades maiores usam
+uma frequência menor. A captura das câmeras permanece independente; veja os
+[limites e controles do mosaico](docs/uso.md#mosaico).
+
 ## Capturas das páginas
 
 As capturas foram feitas localmente. As páginas de câmera, mosaico, mensagens,
@@ -146,9 +151,6 @@ k8s/is-viewer.yaml        Exemplo de implantação no Kubernetes
 Comece por `server.py`, siga para `is_viewer/app.py` e depois para
 `is_viewer/web/routes.py`. O [guia de arquitetura](docs/arquitetura.md) acompanha
 uma requisição desde o navegador até o broker e de volta.
-
-O arquivo `is-viewer-sea.py` é um experimento independente de envio de PTZ, com
-endereço e câmera fixos. Ele não faz parte da inicialização do viewer.
 
 ## Docker e Kubernetes
 
